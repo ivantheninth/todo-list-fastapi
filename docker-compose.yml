@@ -1,0 +1,7 @@
+services:
+  backend:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://ivandevyatkin@host.docker.internal:5432/todo_db
