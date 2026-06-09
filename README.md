@@ -1,7 +1,7 @@
 # todo-list-fastapi
 # Todo List
 
-Simple Todo application built with FastAPI and PostgreSQL.
+Todo application built with FastAPI and PostgreSQL.
 
 ## Features
 
