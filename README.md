@@ -1,34 +1,73 @@
-# todo-list-fastapi
-# Todo List
+Todo List API
 
-Todo application built with FastAPI and PostgreSQL.
+Todo List application built with FastAPI, PostgreSQL, SQLAlchemy 2.0, Docker, Docker Compose, Nginx, and a minimal HTML + JavaScript frontend.
 
-## Features
+⸻
 
-- Create tasks
-- View tasks
-- Update tasks
-- Delete tasks
+Features
 
-## Technologies
+* Create tasks
+* View all tasks
+* Update tasks
+* Delete tasks
+* PostgreSQL database
+* SQLAlchemy 2.0 ORM
+* FastAPI REST API
+* HTML + JavaScript frontend
+* Docker Compose setup
+* Nginx frontend server
 
-- FastAPI
-- SQLAlchemy
-- PostgreSQL
-- HTML
-- JavaScript
+⸻
 
-## Run
+Tech Stack
 
-bash uvicorn api:app --reload 
+* Python
+* FastAPI
+* SQLAlchemy 2.0
+* PostgreSQL
+* Pydantic
+* Docker
+* Docker Compose
+* Nginx
+* HTML
+* JavaScript
+
+⸻
+
+Project Structure
+
+project/
+│
+├── api.py
+├── crud.py
+├── database.py
+├── models.py
+├── schemas.py
+├── Dockerfile
+├── docker-compose.yml
+├── requirements.txt
+│
+└── frontend/
+    └── index.html
+
+⸻
+
+Run with Docker
+
+docker compose up --build
 
 Open:
 
-text http://127.0.0.1:8000 
+http://localhost:8080
 
-## API
+⸻
 
-- GET /tasks
-- POST /tasks
-- PATCH /tasks/{id}
-- DELETE /tasks/{id}
+API Endpoints
+
+Method	Endpoint	Description
+GET	/tasks	Get all tasks
+POST	/tasks	Create a task
+PATCH	/tasks/{id}	Update a task
+DELETE	/tasks/{id}	Delete a task
+
+⸻
