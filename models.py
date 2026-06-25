@@ -9,7 +9,7 @@ from sqlalchemy.orm import Mapped, mapped_column #import ORM typing and column m
 
 from database import Base
 
-# Task model represents the "task" table
+# Task model represents the "tasks" table
 class Task(Base):
     __tablename__ = "tasks" # name of db table
 
@@ -20,4 +20,4 @@ class Task(Base):
 
 # Returns a readable representation of the Task object for debugging
     def __repr__(self):
-        return f"Task(id={self.id}, title={self.title}, note={self.note}, completed={self.completed})"
+        return f"task(id={self.id}, title={self.title}, note={self.note}, completed={self.completed})"

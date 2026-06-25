@@ -3,140 +3,144 @@ from database import SessionLocal
 from models import Task
 from schemas import TaskCreate, TaskRead, TaskUpdateAll, TaskUpdatePartial
 
-def task_to_read(task: Task):
-    return TaskRead(
-        id=task.id,
-        title=task.title,
-        note=task.note,
-        completed=task.completed
-    )
+class TaskCrud:
 
-def create_task(task_data: TaskCreate):
-    session = SessionLocal()
-
-    try:
-        task = Task(
-            title=task_data.title,
-            note=task_data.note,
-            completed=task_data.completed
+    def task_to_read(self, task: Task):
+        return TaskRead(
+            id=task.id,
+            title=task.title,
+            note=task.note,
+            completed=task.completed
         )
 
-        session.add(task)
-        session.commit()
-        session.refresh(task)
+    def create_task(self, task_data: TaskCreate):
+        session = SessionLocal()
 
-        return task_to_read(task)
+        try:
+            task = Task(
+                title=task_data.title,
+                note=task_data.note,
+                completed=task_data.completed
+            )
 
-    finally:
-        session.close()
+            session.add(task)
+            session.commit()
+            session.refresh(task)
 
-def update_whole_task(task_id: int, task_data: TaskUpdateAll):
-    session = SessionLocal()
+            return self.task_to_read(task)
 
-    try:
-        task = session.get(Task, task_id)
+        finally:
+            session.close()
 
-        if task is None:
-            return None
+    def update_whole_task(self, task_id: int, task_data: TaskUpdateAll):
+        session = SessionLocal()
 
-        task.title = task_data.title
-        task.note = task_data.note
-        task.completed = task_data.completed
+        try:
+            task = session.get(Task, task_id)
 
-        session.commit()
-        session.refresh(task)
+            if task is None:
+                return None
 
-        return task_to_read(task)
-
-    finally:
-        session.close()
-
-def update_task_partially(task_id: int, task_data: TaskUpdatePartial):
-    session = SessionLocal()
-
-    try:
-        task = session.get(Task, task_id)
-
-        if task is None:
-            return None
-
-        if task_data.title is not None:
             task.title = task_data.title
-        if task_data.note is not None:
             task.note = task_data.note
-        if task_data.completed is not None:
             task.completed = task_data.completed
 
-        session.commit()
-        session.refresh(task)
+            session.commit()
+            session.refresh(task)
 
-        return task_to_read(task)
+            return self.task_to_read(task)
 
-    finally:
-        session.close()
+        finally:
+            session.close()
 
-def get_all_tasks():
-    session = SessionLocal()
+    def update_task_partially(self, task_id: int, task_data: TaskUpdatePartial):
+        session = SessionLocal()
 
-    try:
-        stmt = select(Task)
-        result = session.execute(stmt)
-        tasks = result.scalars().all()
-        return [task_to_read(task) for task in tasks]
-    finally:
-        session.close()
+        try:
+            task = session.get(Task, task_id)
 
-def get_task_by_id(task_id: int):
-    session = SessionLocal()
+            if task is None:
+                return None
 
-    try:
-        task = session.get(Task, task_id)
+            if task_data.title is not None:
+                task.title = task_data.title
+            if task_data.note is not None:
+                task.note = task_data.note
+            if task_data.completed is not None:
+                task.completed = task_data.completed
 
-        if task is None:
-            return None
+            session.commit()
+            session.refresh(task)
 
-        return task_to_read(task)
+            return self.task_to_read(task)
 
-    finally:
-        session.close()
+        finally:
+            session.close()
 
-def mark_task_done(task_id: int):
-    session = SessionLocal()
+    def get_all_tasks(self):
+        session = SessionLocal()
 
-    try:
-        task = session.get(Task, task_id)
+        try:
+            stmt = select(Task)
+            result = session.execute(stmt)
+            tasks = result.scalars().all()
+            return [self.task_to_read(task) for task in tasks]
+        finally:
+            session.close()
 
-        if task is None:
-            return None
+    def get_task_by_id(self, task_id: int):
+        session = SessionLocal()
 
-        task.completed = True
-        session.commit()
-        session.refresh(task)
+        try:
+            task = session.get(Task, task_id)
 
-        return task_to_read(task)
+            if task is None:
+                return None
 
-    finally:
-        session.close()
+            return self.task_to_read(task)
+
+        finally:
+            session.close()
+
+    def mark_task_done(self, task_id: int):
+        session = SessionLocal()
+
+        try:
+            task = session.get(Task, task_id)
+
+            if task is None:
+                return None
+
+            task.completed = True
+            session.commit()
+            session.refresh(task)
+
+            return self.task_to_read(task)
+
+        finally:
+            session.close()
 
 
-def delete_task(task_id: int):
-    session = SessionLocal()
+    def delete_task(self, task_id: int):
+        session = SessionLocal()
 
-    try:
+        try:
 
-        task = session.get(Task, task_id)
+            task = session.get(Task, task_id)
 
-        if task is None:
-            return None
+            if task is None:
+                return None
 
-        deleted_task = task_to_read(task)
+            deleted_task = self.task_to_read(task)
 
-        session.delete(task)
-        session.commit()
+            session.delete(task)
+            session.commit()
 
-        return deleted_task
+            return deleted_task
 
-    finally:
-        session.close()
+        finally:
+            session.close()
+
+task_crud = TaskCrud()
 
 
