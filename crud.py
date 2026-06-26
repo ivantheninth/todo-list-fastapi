@@ -1,33 +1,24 @@
 from sqlalchemy import select
 from database import SessionLocal
 from models import Task
-from schemas import TaskCreate, TaskRead, TaskUpdateAll, TaskUpdatePartial
+from schemas import TaskCreate, TaskUpdateAll, TaskUpdatePartial
+from mapper import task_mapper
 
 class TaskCrud:
-
-    def task_to_read(self, task: Task):
-        return TaskRead(
-            id=task.id,
-            title=task.title,
-            note=task.note,
-            completed=task.completed
-        )
 
     def create_task(self, task_data: TaskCreate):
         session = SessionLocal()
 
         try:
-            task = Task(
-                title=task_data.title,
-                note=task_data.note,
-                completed=task_data.completed
-            )
+            task = task_mapper.to_model(task_data)
+
+
 
             session.add(task)
             session.commit()
             session.refresh(task)
 
-            return self.task_to_read(task)
+            return task_mapper.to_read(task)
 
         finally:
             session.close()
@@ -41,14 +32,12 @@ class TaskCrud:
             if task is None:
                 return None
 
-            task.title = task_data.title
-            task.note = task_data.note
-            task.completed = task_data.completed
+            task_mapper.update_model(task, task_data)
 
             session.commit()
             session.refresh(task)
 
-            return self.task_to_read(task)
+            return task_mapper.to_read(task)
 
         finally:
             session.close()
@@ -62,17 +51,12 @@ class TaskCrud:
             if task is None:
                 return None
 
-            if task_data.title is not None:
-                task.title = task_data.title
-            if task_data.note is not None:
-                task.note = task_data.note
-            if task_data.completed is not None:
-                task.completed = task_data.completed
+            task_mapper.patch_model(task, task_data)
 
             session.commit()
             session.refresh(task)
 
-            return self.task_to_read(task)
+            return task_mapper.to_read(task)
 
         finally:
             session.close()
@@ -84,7 +68,7 @@ class TaskCrud:
             stmt = select(Task)
             result = session.execute(stmt)
             tasks = result.scalars().all()
-            return [self.task_to_read(task) for task in tasks]
+            return [task_mapper.to_read(task) for task in tasks]
         finally:
             session.close()
 
@@ -97,7 +81,7 @@ class TaskCrud:
             if task is None:
                 return None
 
-            return self.task_to_read(task)
+            return task_mapper.to_read(task)
 
         finally:
             session.close()
@@ -111,11 +95,12 @@ class TaskCrud:
             if task is None:
                 return None
 
-            task.completed = True
+            task_mapper.mark_done(task)
+
             session.commit()
             session.refresh(task)
 
-            return self.task_to_read(task)
+            return task_mapper.to_read(task)
 
         finally:
             session.close()
@@ -131,7 +116,7 @@ class TaskCrud:
             if task is None:
                 return None
 
-            deleted_task = self.task_to_read(task)
+            deleted_task = task_mapper.to_read(task)
 
             session.delete(task)
             session.commit()

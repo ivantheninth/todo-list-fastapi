@@ -4,7 +4,7 @@
 #partial update
 # read tasks
 
-from pydantic import BaseModel # BaseModel is used to describe the structure of data and automatically validate it.
+from pydantic import BaseModel, ConfigDict # BaseModel is used to describe the structure of data and automatically validate it.
 
 # Validation of created tasks
 
@@ -13,7 +13,7 @@ class TaskCreate(BaseModel):
     note: str | None = None # this field could be empty, that's why we use None = None
     completed: bool = False
 
-# update all tasks
+# # Update all task fields
 
 class TaskUpdateAll(BaseModel):
     title: str
@@ -34,4 +34,5 @@ class TaskRead(BaseModel):
     title: str
     note: str | None = None # this field could be empty, that's why we use None = None
     completed: bool
+    model_config = ConfigDict(from_attributes=True)
 
