@@ -16,20 +16,13 @@ class TaskMapper:
 
     def update_model(self, task: Task, task_data: TaskUpdateAll) -> None:
 
-        task.title = task_data.title
-        task.note = task_data.note
-        task.completed = task_data.completed
+        for key, value in task_data.model_dump().items():
+            setattr(task, key, value)
 
     def patch_model(self, task: Task, task_data: TaskUpdatePartial) -> None:
 
-        if task_data.title is not None:
-            task.title = task_data.title
-
-        if task_data.note is not None:
-            task.note = task_data.note
-
-        if task_data.completed is not None:
-            task.completed = task_data.completed
+        for key, value in task_data.model_dump(exclude_unset=True).items():
+            setattr(task, key, value)
 
     def mark_done(self, task: Task) -> None:
         task.completed = True

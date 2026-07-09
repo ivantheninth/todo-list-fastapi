@@ -1,51 +1,56 @@
 from sqlalchemy import select
+from sqlalchemy.orm import Session
 from database import SessionLocal
 from models import Task
 from schemas import TaskCreate, TaskUpdateAll, TaskUpdatePartial
 from mapper import task_mapper
 
+
 class TaskCrud:
 
+    _instance = None
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+
+        return cls._instance
+
+    def _save_new_task(self, session: Session, task: Task) -> None:
+        session.add(task)
+        session.commit()
+        session.refresh(task)
+
+    def _commit_task_changes(self, session: Session, task: Task) -> None:
+        session.commit()
+        session.refresh(task)
+
+    def _delete_task(self, session: Session, task: Task) -> None:
+        session.delete(task)
+        session.commit()
+
     def create_task(self, task_data: TaskCreate):
-        session = SessionLocal()
+        with SessionLocal() as session:
 
-        try:
             task = task_mapper.to_model(task_data)
-
-
-
-            session.add(task)
-            session.commit()
-            session.refresh(task)
-
+            self._save_new_task(session, task)
             return task_mapper.to_read(task)
 
-        finally:
-            session.close()
-
     def update_whole_task(self, task_id: int, task_data: TaskUpdateAll):
-        session = SessionLocal()
-
-        try:
+        with SessionLocal() as session:
             task = session.get(Task, task_id)
 
             if task is None:
                 return None
 
             task_mapper.update_model(task, task_data)
-
-            session.commit()
-            session.refresh(task)
+            self._commit_task_changes(session, task)
 
             return task_mapper.to_read(task)
 
-        finally:
-            session.close()
-
     def update_task_partially(self, task_id: int, task_data: TaskUpdatePartial):
-        session = SessionLocal()
+        with SessionLocal() as session:
 
-        try:
             task = session.get(Task, task_id)
 
             if task is None:
@@ -53,29 +58,22 @@ class TaskCrud:
 
             task_mapper.patch_model(task, task_data)
 
-            session.commit()
-            session.refresh(task)
+            self._commit_task_changes(session, task)
 
             return task_mapper.to_read(task)
 
-        finally:
-            session.close()
-
     def get_all_tasks(self):
-        session = SessionLocal()
+        with SessionLocal() as session:
 
-        try:
             stmt = select(Task)
             result = session.execute(stmt)
             tasks = result.scalars().all()
+
             return [task_mapper.to_read(task) for task in tasks]
-        finally:
-            session.close()
 
     def get_task_by_id(self, task_id: int):
-        session = SessionLocal()
+        with SessionLocal() as session:
 
-        try:
             task = session.get(Task, task_id)
 
             if task is None:
@@ -83,33 +81,21 @@ class TaskCrud:
 
             return task_mapper.to_read(task)
 
-        finally:
-            session.close()
-
     def mark_task_done(self, task_id: int):
-        session = SessionLocal()
+        with SessionLocal() as session:
 
-        try:
             task = session.get(Task, task_id)
 
             if task is None:
                 return None
 
             task_mapper.mark_done(task)
-
-            session.commit()
-            session.refresh(task)
+            self._commit_task_changes(session, task)
 
             return task_mapper.to_read(task)
 
-        finally:
-            session.close()
-
-
     def delete_task(self, task_id: int):
-        session = SessionLocal()
-
-        try:
+        with SessionLocal() as session:
 
             task = session.get(Task, task_id)
 
@@ -117,14 +103,9 @@ class TaskCrud:
                 return None
 
             deleted_task = task_mapper.to_read(task)
-
-            session.delete(task)
-            session.commit()
+            self._delete_task(session, task)
 
             return deleted_task
-
-        finally:
-            session.close()
 
 task_crud = TaskCrud()
 

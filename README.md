@@ -1,123 +1,316 @@
-Todo List API
+# Todo List API
 
-Todo List application built with FastAPI, PostgreSQL, SQLAlchemy, Docker Compose and Nginx.
+A RESTful task management application built with **FastAPI**, **SQLAlchemy**, **PostgreSQL**, **Docker Compose**, and **Nginx**.
 
-⸻
+The project exposes a REST API for managing tasks and includes a simple web interface for interacting with the backend.
 
-Features
+---
 
-* Create tasks
-* View all tasks
-* Update tasks
-* Delete tasks
+# Features
 
-⸻
+- Create tasks
+- View all tasks
+- Get a task by ID
+- Update existing tasks
+- Mark tasks as completed
+- Delete tasks
 
-Technologies
+---
 
-* Python
-* FastAPI
-* SQLAlchemy 2.0
-* PostgreSQL
-* Docker
-* Docker Compose
-* Nginx
-* HTML
-* JavaScript
+# Tech Stack
 
-⸻
+## Backend
 
-Project Structure
+- Python 3
+- FastAPI
+- SQLAlchemy 2.0
+- Pydantic
+- Uvicorn
 
+## Database
+
+- PostgreSQL 16
+
+## Infrastructure
+
+- Docker
+- Docker Compose
+- Nginx
+
+## Frontend
+
+- HTML
+- JavaScript (Fetch API)
+
+---
+
+# Project Structure
+
+```text
 .
 ├── api.py
 ├── crud.py
 ├── database.py
+├── mapper.py
 ├── models.py
 ├── schemas.py
 ├── Dockerfile
 ├── docker-compose.yml
 ├── requirements.txt
-└── frontend/
-    └── index.html
+├── README.md
+├── .dockerignore
+├── .gitignore
+├── .env.example
+└── index.html
+```
 
-⸻
+---
 
-Project Files
+# Architecture
 
-api.py
+```
+                 HTTP
+                  │
+                  ▼
+          +----------------+
+          |     Nginx      |
+          |   Port 8080    |
+          +----------------+
+                  │
+                  │ HTTP
+                  ▼
+          +----------------+
+          |    FastAPI     |
+          |   Port 8000    |
+          +----------------+
+                  │
+                  │ SQLAlchemy
+                  ▼
+          +----------------+
+          | PostgreSQL 16  |
+          +----------------+
+```
 
-Receives HTTP requests from the frontend and returns JSON responses.
+---
 
-⸻
+# API Endpoints
 
-crud.py
+## Create Task
 
-Contains functions for creating, reading, updating and deleting tasks in the database.
+```
+POST /tasks
+```
 
-⸻
+Example request
 
-database.py
+```json
+{
+  "title": "Learn Docker",
+  "note": "Read Docker documentation",
+  "completed": false
+}
+```
 
-Creates the database connection and SQLAlchemy session.
+---
 
-⸻
+## Get All Tasks
 
-models.py
+```
+GET /tasks
+```
 
-Contains SQLAlchemy models.
+---
 
-⸻
+## Get Task By ID
 
-schemas.py
+```
+GET /tasks/{task_id}
+```
 
-Contains Pydantic models used by FastAPI.
+---
 
-⸻
+## Update Task
 
-API Endpoints
+```
+PATCH /tasks/{task_id}
+```
 
-Method	Endpoint
-GET	/tasks
-POST	/tasks
-PATCH	/tasks/{task_id}
-DELETE	/tasks/{task_id}
+Example request
 
-⸻
+```json
+{
+  "title": "Updated title",
+  "note": "Updated note",
+  "completed": true
+}
+```
 
-Run
+---
 
-Start the project:
+## Delete Task
 
+```
+DELETE /tasks/{task_id}
+```
+
+---
+
+# Prerequisites
+
+Before running the application, make sure the following software is installed:
+
+- Docker
+- Docker Compose
+
+Verify the installation:
+
+```bash
+docker --version
+docker compose version
+```
+
+---
+
+# Configuration
+
+Create a `.env` file in the project root.
+
+You can copy the example configuration:
+
+```bash
+cp .env.example .env
+```
+
+Example:
+
+```env
+POSTGRES_USER=ivan
+POSTGRES_PASSWORD=REMOVED_PASSWORD
+POSTGRES_DB=todo_db
+
+DATABASE_URL=postgresql://ivan:REMOVED_PASSWORD@postgres:5432/todo_db
+```
+
+---
+
+# Docker Containers
+
+The application consists of three containers.
+
+## Nginx
+
+- Serves the frontend
+- Exposes port **8080**
+
+## Backend
+
+- Runs the FastAPI application
+- Uses Uvicorn as the ASGI server
+- Exposes port **8000**
+
+## PostgreSQL
+
+- Stores application data
+- Uses a Docker volume for persistent storage
+
+---
+
+# Running the Application
+
+Build the backend image and start all containers.
+
+```bash
 docker compose up --build
+```
 
-Open in your browser:
+Docker Compose will automatically:
 
-Local:
+- Build the backend image
+- Pull the official Nginx image
+- Pull the official PostgreSQL image
+- Create the Docker network
+- Create the PostgreSQL volume
+- Start all containers
 
+---
+
+# Accessing the Application
+
+Frontend
+
+```
 http://localhost:8080
+```
 
-Remote:
+Swagger UI
 
-http://<SERVER_PUBLIC_IP>:8080
+```
+http://localhost:8000/docs
+```
 
-Replace <SERVER_PUBLIC_IP> with your server IP.
+OpenAPI Specification
 
-⸻
+```
+http://localhost:8000/openapi.json
+```
 
-Docker
+---
 
-The project uses three containers:
+# Stopping the Application
 
-* frontend (Nginx)
-* backend (FastAPI)
-* database (PostgreSQL)
+Stop all running containers.
 
-The PostgreSQL database uses a Docker volume, so the data is not lost after recreating containers.
+```bash
+docker compose down
+```
 
-⸻
+---
 
-Notes
+# Removing Containers and Database
 
-Database credentials and other sensitive information should not be stored directly in the source code.
-They should be provided using environment variables.
+To remove all containers together with the PostgreSQL volume:
+
+```bash
+docker compose down -v
+```
+
+---
+
+# Database Persistence
+
+PostgreSQL stores its data inside a Docker volume.
+
+Because of this, recreating containers does **not** remove the database.
+
+The database is deleted only when the Docker volume is removed using:
+
+```bash
+docker compose down -v
+```
+
+---
+
+# Technologies
+
+| Technology | Purpose |
+|------------|---------|
+| Python | Programming language |
+| FastAPI | REST API framework |
+| SQLAlchemy | ORM |
+| PostgreSQL | Relational database |
+| Docker | Containerization |
+| Docker Compose | Multi-container orchestration |
+| Nginx | Web server |
+| Uvicorn | ASGI server |
+| HTML | Frontend |
+| JavaScript | Client-side logic |
+
+---
+
+# Notes
+
+- Database credentials are stored using environment variables.
+- PostgreSQL data is persisted through a Docker volume.
+- Containers communicate over Docker's internal network.
+- The backend connects to PostgreSQL using the service name defined in `docker-compose.yml`.
+- Nginx serves the frontend while the backend exposes the REST API.

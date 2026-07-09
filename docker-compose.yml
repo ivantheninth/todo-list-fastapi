@@ -1,10 +1,10 @@
 services:
-  frontend:
+  nginx:
     image: nginx:alpine
     ports:
       - "8080:80"
     volumes:
-      - ./frontend:/usr/share/nginx/html:ro
+      - ./index.html:/usr/share/nginx/html/index.html:ro
     depends_on:
       - backend
   backend:
@@ -14,10 +14,10 @@ services:
     environment:
       DATABASE_URL: ${DATABASE_URL}
     depends_on:
-      db:
+      postgres:
         condition: service_healthy
 
-  db:
+  postgres:
     image: postgres:16
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
