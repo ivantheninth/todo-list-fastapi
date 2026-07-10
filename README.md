@@ -1,52 +1,39 @@
 # Todo List API
 
-A RESTful task management application built with **FastAPI**, **SQLAlchemy**, **PostgreSQL**, **Docker Compose**, and **Nginx**.
+A simple Todo List application built with FastAPI, PostgreSQL, SQLAlchemy, Docker, and Nginx.
 
-The project exposes a REST API for managing tasks and includes a simple web interface for interacting with the backend.
+## Features
 
----
-
-# Features
-
-- Create tasks
+- Create a task
 - View all tasks
-- Get a task by ID
-- Update existing tasks
-- Mark tasks as completed
-- Delete tasks
+- View a task by ID
+- Update a task
+- Delete a task
+- PostgreSQL database
+- Dockerized application
+- Nginx reverse proxy
+- GitHub Actions CI/CD deployment
+- Deployed on Google Cloud Platform
 
 ---
 
-# Tech Stack
+## Tech Stack
 
-## Backend
-
-- Python 3
+- Python 3.12
 - FastAPI
-- SQLAlchemy 2.0
-- Pydantic
-- Uvicorn
-
-## Database
-
-- PostgreSQL 16
-
-## Infrastructure
-
+- SQLAlchemy
+- PostgreSQL
 - Docker
 - Docker Compose
 - Nginx
-
-## Frontend
-
-- HTML
-- JavaScript (Fetch API)
+- GitHub Actions
+- Google Cloud Platform (Compute Engine)
 
 ---
 
-# Project Structure
+## Project Structure
 
-```text
+```
 .
 ├── api.py
 ├── crud.py
@@ -56,261 +43,92 @@ The project exposes a REST API for managing tasks and includes a simple web inte
 ├── schemas.py
 ├── Dockerfile
 ├── docker-compose.yml
+├── nginx.conf
+├── index.html
 ├── requirements.txt
-├── README.md
-├── .dockerignore
-├── .gitignore
-├── .env.example
-└── index.html
+└── .github/
+    └── workflows/
+        └── deploy.yml
 ```
 
 ---
 
-# Architecture
+## API Endpoints
 
-```
-                 HTTP
-                  │
-                  ▼
-          +----------------+
-          |     Nginx      |
-          |   Port 8080    |
-          +----------------+
-                  │
-                  │ HTTP
-                  ▼
-          +----------------+
-          |    FastAPI     |
-          |   Port 8000    |
-          +----------------+
-                  │
-                  │ SQLAlchemy
-                  ▼
-          +----------------+
-          | PostgreSQL 16  |
-          +----------------+
-```
+| Method | Endpoint | Description |
+|---------|----------|-------------|
+| GET | /tasks | Get all tasks |
+| GET | /tasks/{id} | Get task by ID |
+| POST | /tasks | Create task |
+| PATCH | /tasks/{id} | Update task |
+| DELETE | /tasks/{id} | Delete task |
 
 ---
 
-# API Endpoints
+## Run locally
 
-## Create Task
-
-```
-POST /tasks
-```
-
-Example request
-
-```json
-{
-  "title": "Learn Docker",
-  "note": "Read Docker documentation",
-  "completed": false
-}
-```
-
----
-
-## Get All Tasks
-
-```
-GET /tasks
-```
-
----
-
-## Get Task By ID
-
-```
-GET /tasks/{task_id}
-```
-
----
-
-## Update Task
-
-```
-PATCH /tasks/{task_id}
-```
-
-Example request
-
-```json
-{
-  "title": "Updated title",
-  "note": "Updated note",
-  "completed": true
-}
-```
-
----
-
-## Delete Task
-
-```
-DELETE /tasks/{task_id}
-```
-
----
-
-# Prerequisites
-
-Before running the application, make sure the following software is installed:
-
-- Docker
-- Docker Compose
-
-Verify the installation:
+Clone the repository:
 
 ```bash
-docker --version
-docker compose version
+git clone https://github.com/<your_username>/todo-list-fastapi.git
+cd todo-list-fastapi
 ```
 
----
-
-# Configuration
-
-Create a `.env` file in the project root.
-
-You can copy the example configuration:
-
-```bash
-cp .env.example .env
-```
-
-Example:
+Create a `.env` file:
 
 ```env
-POSTGRES_USER=ivan
-POSTGRES_PASSWORD=REMOVED_PASSWORD
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=password
 POSTGRES_DB=todo_db
 
-DATABASE_URL=postgresql://ivan:REMOVED_PASSWORD@postgres:5432/todo_db
+DATABASE_URL=postgresql+psycopg://postgres:password@postgres:5432/todo_db
 ```
 
----
-
-# Docker Containers
-
-The application consists of three containers.
-
-## Nginx
-
-- Serves the frontend
-- Exposes port **8080**
-
-## Backend
-
-- Runs the FastAPI application
-- Uses Uvicorn as the ASGI server
-- Exposes port **8000**
-
-## PostgreSQL
-
-- Stores application data
-- Uses a Docker volume for persistent storage
-
----
-
-# Running the Application
-
-Build the backend image and start all containers.
+Build and start containers:
 
 ```bash
 docker compose up --build
 ```
 
-Docker Compose will automatically:
-
-- Build the backend image
-- Pull the official Nginx image
-- Pull the official PostgreSQL image
-- Create the Docker network
-- Create the PostgreSQL volume
-- Start all containers
-
----
-
-# Accessing the Application
-
-Frontend
+Frontend:
 
 ```
 http://localhost:8080
 ```
 
-Swagger UI
+Swagger UI:
 
 ```
 http://localhost:8000/docs
 ```
 
-OpenAPI Specification
+---
 
-```
-http://localhost:8000/openapi.json
-```
+## Deployment
+
+The project is automatically deployed to a Google Cloud Platform VM using GitHub Actions.
+
+Deployment includes:
+
+- SSH authentication
+- Docker Compose
+- Automatic application update after every push to the `main` branch
 
 ---
 
-# Stopping the Application
+## Future Improvements
 
-Stop all running containers.
-
-```bash
-docker compose down
-```
-
----
-
-# Removing Containers and Database
-
-To remove all containers together with the PostgreSQL volume:
-
-```bash
-docker compose down -v
-```
+- User authentication (JWT)
+- User registration
+- Alembic migrations
+- Unit tests with pytest
+- Logging
+- Pagination
+- Search and filtering
+- Task ownership
 
 ---
 
-# Database Persistence
+## Author
 
-PostgreSQL stores its data inside a Docker volume.
-
-Because of this, recreating containers does **not** remove the database.
-
-The database is deleted only when the Docker volume is removed using:
-
-```bash
-docker compose down -v
-```
-
----
-
-# Technologies
-
-| Technology | Purpose |
-|------------|---------|
-| Python | Programming language |
-| FastAPI | REST API framework |
-| SQLAlchemy | ORM |
-| PostgreSQL | Relational database |
-| Docker | Containerization |
-| Docker Compose | Multi-container orchestration |
-| Nginx | Web server |
-| Uvicorn | ASGI server |
-| HTML | Frontend |
-| JavaScript | Client-side logic |
-
----
-
-# Notes
-
-- Database credentials are stored using environment variables.
-- PostgreSQL data is persisted through a Docker volume.
-- Containers communicate over Docker's internal network.
-- The backend connects to PostgreSQL using the service name defined in `docker-compose.yml`.
-- Nginx serves the frontend while the backend exposes the REST API.
+Ivan Devyatkin
