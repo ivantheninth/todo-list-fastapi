@@ -134,7 +134,7 @@ function Index() {
       <div className="mx-auto max-w-2xl px-6 py-12 sm:py-16">
         <header className="mb-10">
           <p className="text-sm uppercase tracking-[0.2em] text-muted-foreground">
-            Warm Todo
+            ToDo List
           </p>
           <h1 className="mt-2 text-4xl font-semibold tracking-tight sm:text-5xl">
             Today's tasks
