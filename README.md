@@ -1,120 +1,92 @@
-# ToDo List API
+# Todo List
 
-A production-style full-stack ToDo application built with **FastAPI**, **React**, **PostgreSQL**, **Docker**, **Nginx**, and **GitHub Actions**.
+A full-stack Todo List application built with **FastAPI**, **React**, **PostgreSQL**, **Docker**, **Nginx**, and **GitHub Actions**.
 
-The project demonstrates how to build, containerize, and automatically deploy a Python web application to **Google Cloud Platform (GCP)** using a CI/CD pipeline.
-
----
-
-# Table of Contents
-
-- [Features](#features)
-- [Tech Stack](#tech-stack)
-- [Architecture](#architecture)
-- [Project Structure](#project-structure)
-- [Application Flow](#application-flow)
-- [Running Locally](#running-locally)
-- [Environment Variables](#environment-variables)
-- [Docker Services](#docker-services)
-- [API Documentation](#api-documentation)
-- [Deployment](#deployment)
-- [GitHub Actions Workflow](#github-actions-workflow)
-- [Nginx Reverse Proxy](#nginx-reverse-proxy)
-- [Database](#database)
-- [Future Improvements](#future-improvements)
+The project demonstrates the development of a modern REST API, database integration, containerization, reverse proxy configuration, automated deployment, and cloud hosting.
 
 ---
 
-# Features
+## Features
 
 - Create tasks
-- Read all tasks
-- Read task by ID
-- Update tasks (PUT)
-- Partially update tasks (PATCH)
+- Update tasks
 - Delete tasks
-- PostgreSQL persistent storage
+- Mark tasks as completed
+- Restore completed tasks
+- Search tasks
+- Filter tasks by status
+- RESTful API
+- Interactive Swagger documentation
+- PostgreSQL database
 - Dockerized application
 - Reverse proxy with Nginx
-- Automatic deployment to Google Cloud
-- RESTful API
-- Swagger UI documentation
+- Automated deployment with GitHub Actions
+- Deployment on Google Cloud Platform
 
 ---
 
-# Tech Stack
+## Technology Stack
 
-## Backend
+### Backend
 
-- Python 3.12
+- Python 3.14
 - FastAPI
-- SQLAlchemy 2.0
+- SQLAlchemy
 - Pydantic
+- PostgreSQL
 - Uvicorn
 
-## Frontend
+### Frontend
 
 - React
-- TanStack Start
 - TypeScript
 - Vite
 
-## Database
-
-- PostgreSQL 16
-
-## Infrastructure
+### DevOps
 
 - Docker
 - Docker Compose
 - Nginx
 - GitHub Actions
-- Google Cloud Compute Engine
+- Google Cloud Platform (Compute Engine)
 
 ---
 
-# Architecture
+## Project Architecture
 
-```
-                    Browser
-                       │
-                       │
-                       ▼
-               ┌────────────────┐
-               │     Nginx      │
-               │    Port 8080   │
-               └───────┬────────┘
-                       │
-        ┌──────────────┴──────────────┐
-        │                             │
-        ▼                             ▼
- React Frontend                 FastAPI Backend
-                                     │
-                                     │ SQLAlchemy
-                                     ▼
-                               PostgreSQL
+```text
+                Browser
+                   │
+              Port 8080
+                   │
+                Nginx
+          ┌────────┴────────┐
+          │                 │
+      React Frontend    FastAPI Backend
+                              │
+                         SQLAlchemy ORM
+                              │
+                         PostgreSQL
 ```
 
 ---
 
-# Project Structure
+## Project Structure
 
-```
+```text
 .
+├── .github/
+│   └── workflows/
 ├── frontend/
-│   ├── src/
-│   ├── public/
-│   ├── Dockerfile
-│   └── package.json
-│
 ├── api.py
 ├── crud.py
 ├── database.py
 ├── mapper.py
 ├── models.py
-├── nginx.conf
+├── schemas.py
 ├── Dockerfile
 ├── docker-compose.yml
+├── nginx.conf
 ├── requirements.txt
 ├── .env.example
 └── README.md
@@ -122,378 +94,143 @@ The project demonstrates how to build, containerize, and automatically deploy a 
 
 ---
 
-# Application Flow
+## REST API
 
-```
-Browser
-    │
-    ▼
-Nginx
-    │
-    ├────────► React Frontend
-    │
-    ▼
-FastAPI
-    │
-SQLAlchemy
-    │
-    ▼
-PostgreSQL
-```
+| Method | Endpoint | Description |
+|---------|----------|-------------|
+| GET | `/` | Health check |
+| GET | `/tasks` | Get all tasks |
+| GET | `/tasks/{id}` | Get a task by ID |
+| POST | `/tasks` | Create a task |
+| PATCH | `/tasks/{id}` | Update a task |
+| DELETE | `/tasks/{id}` | Delete a task |
 
-1. The browser sends a request.
-
-2. Nginx receives the request.
-
-3. Requests for the frontend are served by the React application.
-
-4. API requests are forwarded to FastAPI.
-
-5. FastAPI processes the request.
-
-6. SQLAlchemy communicates with PostgreSQL.
-
-7. The response is returned back through Nginx.
+Interactive API documentation is available through Swagger UI.
 
 ---
 
-# Running Locally
+## Getting Started
 
-## Clone repository
+### Clone the repository
 
 ```bash
 git clone https://github.com/ivantheninth/todo-list-fastapi.git
-
 cd todo-list-fastapi
 ```
 
----
-
-## Create environment variables
-
-```bash
-cp .env.example .env
-```
-
-Configure the database credentials.
-
-Example:
+### Create a `.env` file
 
 ```env
-DATABASE_URL=postgresql://username:password@db:5432/todo_db
+DATABASE_URL=postgresql://user:password@db:5432/todo_db
 
-POSTGRES_USER=username
-
+POSTGRES_USER=user
 POSTGRES_PASSWORD=password
-
 POSTGRES_DB=todo_db
 ```
 
----
-
-## Start application
+### Build and run
 
 ```bash
-docker-compose up --build
+docker compose up --build
 ```
 
----
-
-## Stop application
+### Stop the application
 
 ```bash
-docker-compose down
+docker compose down
 ```
 
----
-
-## Remove database volume
+### Remove containers and volumes
 
 ```bash
-docker-compose down -v
+docker compose down -v
 ```
 
 ---
 
-# Available URLs
+## Accessing the Application
 
-Frontend
+After deploying the application, replace `<your-server>` with your server's hostname or IP address.
 
-```
-http://localhost:8080
-```
-
-Swagger UI
-
-```
-http://localhost:8080/docs
-```
-
-OpenAPI JSON
-
-```
-http://localhost:8080/openapi.json
-```
+| Service | URL |
+|----------|-----|
+| Frontend | `http://<your-server>:8080` |
+| Swagger UI | `http://<your-server>:8080/docs` |
+| OpenAPI Specification | `http://<your-server>:8080/openapi.json` |
 
 ---
 
-# Docker Services
+## Deployment
+
+The application is configured for automatic deployment to a Google Cloud Platform virtual machine using GitHub Actions.
+
+Deployment workflow:
+
+1. Push changes to the `main` branch.
+2. GitHub Actions starts automatically.
+3. Connects to the server using SSH.
+4. Pulls the latest version of the repository.
+5. Rebuilds Docker images.
+6. Restarts all containers.
+
+No manual deployment is required after pushing to the `main` branch.
+
+---
+
+## Docker Services
 
 The application consists of four Docker containers.
 
-## Frontend
-
-Technology:
-
-- React
-- TanStack Start
-
-Responsibilities:
-
-- User interface
-- Sends HTTP requests to the backend
+| Container | Purpose |
+|-----------|---------|
+| frontend | React application |
+| backend | FastAPI REST API |
+| postgres | PostgreSQL database |
+| nginx | Reverse proxy |
 
 ---
 
-## Backend
+## Database
 
-Technology:
+PostgreSQL is used as the primary database.
 
-- FastAPI
+SQLAlchemy ORM is responsible for:
 
-Responsibilities:
+- Object-relational mapping
+- CRUD operations
+- Session management
 
-- REST API
-- Business logic
-- Database communication
-
----
-
-## PostgreSQL
-
-Responsibilities:
-
-- Persistent task storage
-
-Uses Docker Volume:
-
-```
-postgres_data
-```
-
-Data remains even if containers are recreated.
+Database data is stored in a Docker volume, allowing persistence after container restarts.
 
 ---
 
-## Nginx
+## Reverse Proxy
 
-Responsibilities:
+Nginx serves as the application's entry point and routes incoming requests to the appropriate service.
 
-- Reverse proxy
-- Serves frontend
-- Routes API requests
-- Single entry point
-
----
-
-# Environment Variables
-
-Example configuration:
-
-```env
-DATABASE_URL=postgresql://username:password@db:5432/todo_db
-
-POSTGRES_USER=username
-
-POSTGRES_PASSWORD=password
-
-POSTGRES_DB=todo_db
-```
+| Request | Destination |
+|---------|-------------|
+| `/` | React frontend |
+| `/api/*` | FastAPI backend |
+| `/docs` | Swagger UI |
 
 ---
 
-# API Documentation
+## CI/CD
 
-## GET /
+Continuous deployment is implemented with GitHub Actions.
 
-Health check
+The deployment pipeline automatically:
 
-Returns
-
-```json
-{
-  "message": "App is running"
-}
-```
-
----
-
-## GET /tasks
-
-Returns all tasks.
-
----
-
-## GET /tasks/{id}
-
-Returns a single task.
-
----
-
-## POST /tasks
-
-Creates a task.
-
-Example:
-
-```json
-{
-  "title": "Learn FastAPI",
-  "note": "Finish CRUD project"
-}
-```
-
----
-
-## PUT /tasks/{id}
-
-Replaces an existing task.
-
----
-
-## PATCH /tasks/{id}
-
-Updates selected fields.
-
----
-
-## DELETE /tasks/{id}
-
-Deletes a task.
-
----
-
-# Deployment
-
-The application is deployed to a Google Cloud VM.
-
-Deployment is fully automated.
-
-Every push to the **main** branch triggers GitHub Actions.
-
-Deployment process:
-
-```
-Push to GitHub
-        │
-        ▼
-GitHub Actions
-        │
-SSH connection
-        │
-        ▼
-Google Cloud VM
-        │
-git pull
-        │
-docker-compose up --build
-        │
-Containers restarted
-        │
-Application updated
-```
-
----
-
-# GitHub Actions Workflow
-
-Workflow performs:
-
-- Connects to the VM via SSH
-- Downloads the latest code
+- Connects to the virtual machine via SSH
+- Pulls the latest source code
 - Rebuilds Docker images
-- Starts updated containers
-- Removes old Docker images
-
-Deployment happens automatically.
-
-No manual deployment is required.
+- Restarts all application containers
 
 ---
 
-# Nginx Reverse Proxy
+## Author
 
-Nginx acts as a single entry point.
+**Ivan Devyatkin**
 
-Responsibilities:
-
-- serves the frontend
-- forwards API requests
-- hides internal container ports
-
-Browser
-
-```
-localhost:8080
-```
-
-↓
-
-Nginx
-
-↓
-
-Backend
-
-```
-backend:8000
-```
-
----
-
-# Database
-
-Database:
-
-PostgreSQL 16
-
-Communication:
-
-FastAPI
-
-↓
-
-SQLAlchemy
-
-↓
-
-PostgreSQL
-
-Persistent storage is provided by Docker Volumes.
-
----
-
-# Future Improvements
-
-- JWT Authentication
-- User accounts
-- Task ownership
-- Pagination
-- Search
-- Filtering
-- Logging
-- Pytest
-- GitHub Actions testing
-- Alembic migrations
-- HTTPS
-- Domain name
-
----
-
-# Author
-
-Ivan Devyatkin
-
-Python Backend Developer
-
-Prague, Czech Republic
+GitHub: https://github.com/ivantheninth
