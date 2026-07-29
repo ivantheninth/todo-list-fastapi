@@ -2,22 +2,20 @@
 
 A full-stack Todo List application built with **FastAPI**, **React**, **PostgreSQL**, **Docker**, **Nginx**, and **GitHub Actions**.
 
-The project demonstrates the development of a modern REST API, database integration, containerization, reverse proxy configuration, automated deployment, and cloud hosting.
+The project demonstrates the development of a modern REST API, database integration, automated testing, containerization, reverse proxy configuration, CI/CD, and cloud deployment.
 
 ---
 
 ## Features
 
 - Create tasks
+- Read tasks
 - Update tasks
 - Delete tasks
-- Mark tasks as completed
-- Restore completed tasks
-- Search tasks
-- Filter tasks by status
 - RESTful API
 - Interactive Swagger documentation
 - PostgreSQL database
+- Automated API testing with pytest
 - Dockerized application
 - Reverse proxy with Nginx
 - Automated deployment with GitHub Actions
@@ -78,6 +76,7 @@ The project demonstrates the development of a modern REST API, database integrat
 ├── .github/
 │   └── workflows/
 ├── frontend/
+├── tests/
 ├── api.py
 ├── crud.py
 ├── database.py
@@ -102,7 +101,8 @@ The project demonstrates the development of a modern REST API, database integrat
 | GET | `/tasks` | Get all tasks |
 | GET | `/tasks/{id}` | Get a task by ID |
 | POST | `/tasks` | Create a task |
-| PATCH | `/tasks/{id}` | Update a task |
+| PUT | `/tasks/{id}` | Replace a task |
+| PATCH | `/tasks/{id}` | Partially update a task |
 | DELETE | `/tasks/{id}` | Delete a task |
 
 Interactive API documentation is available through Swagger UI.
@@ -160,6 +160,33 @@ After deploying the application, replace `<your-server>` with your server's host
 
 ---
 
+## Testing
+
+The project includes automated API tests written with **pytest**.
+
+Run all tests:
+
+```bash
+pytest
+```
+
+Run with verbose output:
+
+```bash
+pytest -v
+```
+
+The test suite verifies:
+
+- Task creation
+- Reading tasks
+- Updating tasks (PUT/PATCH)
+- Deleting tasks
+- Validation errors
+- Error handling (404, 422)
+
+---
+
 ## Deployment
 
 The application is configured for automatic deployment to a Google Cloud Platform virtual machine using GitHub Actions.
@@ -168,7 +195,7 @@ Deployment workflow:
 
 1. Push changes to the `main` branch.
 2. GitHub Actions starts automatically.
-3. Connects to the server using SSH.
+3. Connects to the server via SSH.
 4. Pulls the latest version of the repository.
 5. Rebuilds Docker images.
 6. Restarts all containers.
@@ -196,9 +223,10 @@ PostgreSQL is used as the primary database.
 
 SQLAlchemy ORM is responsible for:
 
-- Object-relational mapping
-- CRUD operations
+- Mapping Python objects to database tables
 - Session management
+- Database transactions
+- CRUD operations
 
 Database data is stored in a Docker volume, allowing persistence after container restarts.
 
@@ -206,13 +234,14 @@ Database data is stored in a Docker volume, allowing persistence after container
 
 ## Reverse Proxy
 
-Nginx serves as the application's entry point and routes incoming requests to the appropriate service.
+Nginx serves as the application's entry point and forwards incoming requests to the appropriate service.
 
 | Request | Destination |
 |---------|-------------|
 | `/` | React frontend |
-| `/api/*` | FastAPI backend |
+| `/tasks` | FastAPI backend |
 | `/docs` | Swagger UI |
+| `/openapi.json` | OpenAPI specification |
 
 ---
 

@@ -13,7 +13,7 @@ class TaskCreate(BaseModel):
     note: str | None = None # this field could be empty, that's why we use None = None
     completed: bool = False
 
-# # Update all task fields
+#  Update all task fields
 
 class TaskUpdateAll(BaseModel):
     title: str

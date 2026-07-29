@@ -1,13 +1,20 @@
+# Python
 .venv/
-.idea/
 __pycache__/
 *.pyc
-.env.env
+.pytest_cache/
 
+# IDE
+.idea/
+
+# Environment
 .env
-frontend_old/
-replacements.txt
-frontend/.lovable/
+
+# Frontend
 frontend/node_modules/
 frontend/.output/
 frontend/.tanstack/
+frontend/.lovable/
+
+# macOS
+.DS_Store

@@ -1,8 +1,11 @@
-from fastapi import FastAPI
-from database import Base, engine
-from schemas import TaskCreate, TaskUpdatePartial, TaskUpdateAll
-from crud import task_crud
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.orm import Session
+
+from crud import task_crud
+from database import Base, engine, get_db
+from schemas import TaskCreate, TaskUpdateAll, TaskUpdatePartial
+
 
 Base.metadata.create_all(engine)
 
@@ -16,34 +19,118 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.get("/")
 def root():
     return {"message": "App is running"}
 
+
 @app.get("/tasks")
-def read_all_tasks():
-    return task_crud.get_all_tasks()
+def read_all_tasks(db: Session = Depends(get_db)):
+    return task_crud.get_all_tasks(db)
+
 
 @app.get("/tasks/{task_id}")
-def read_task(task_id: int):
-    return task_crud.get_task_by_id(task_id)
+def read_task(task_id: int, db: Session = Depends(get_db)):
+    task = task_crud.get_task_by_id(db, task_id)
+
+    if task is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Task not found",
+        )
+
+    return task
+
 
 @app.post("/tasks")
-def create_task_endpoint(task_data: TaskCreate):
-    return task_crud.create_task(task_data)
+def create_task_endpoint(
+    task_data: TaskCreate,
+    db: Session = Depends(get_db),
+):
+    try:
+        task = task_crud.create_task(db, task_data)
+        db.commit()
+        return task
+    except Exception:
+        db.rollback()
+        raise
+
 
 @app.put("/tasks/{task_id}")
-def update_whole_task_endpoint(task_id: int, task_data: TaskUpdateAll):
-    return task_crud.update_whole_task(task_id, task_data)
+def update_whole_task_endpoint(
+    task_id: int,
+    task_data: TaskUpdateAll,
+    db: Session = Depends(get_db),
+):
+    task = task_crud.update_whole_task(
+        db,
+        task_id,
+        task_data,
+    )
+
+    if task is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Task not found",
+        )
+
+    try:
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+
+    return task
+
 
 @app.patch("/tasks/{task_id}")
-def update_task_partially_endpoint(task_id: int, task_data: TaskUpdatePartial):
-    return task_crud.update_task_partially(task_id, task_data)
+def update_task_partially_endpoint(
+    task_id: int,
+    task_data: TaskUpdatePartial,
+    db: Session = Depends(get_db),
+):
+    task = task_crud.update_task_partially(
+        db,
+        task_id,
+        task_data,
+    )
+
+    if task is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Task not found",
+        )
+
+    try:
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
+
+    return task
+
 
 @app.delete("/tasks/{task_id}")
-def delete_task(task_id: int):
-    return task_crud.delete_task(task_id)
+def delete_task(
+    task_id: int,
+    db: Session = Depends(get_db),
+):
+    task = task_crud.delete_task(
+        db,
+        task_id,
+    )
 
+    if task is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Task not found",
+        )
 
+    try:
+        db.commit()
+    except Exception:
+        db.rollback()
+        raise
 
-
+    return task
