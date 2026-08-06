@@ -4,8 +4,8 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from api import app
-from database import Base, get_db
+from backend.app.api import app
+from backend.app.database import Base, get_db
 
 
 TEST_DATABASE_URL = (
@@ -14,7 +14,7 @@ TEST_DATABASE_URL = (
 
 test_engine = create_engine(TEST_DATABASE_URL)
 
-TestingSessionLocal = sessionmaker(
+TestingSessionLocal =sessionmaker(
     autocommit=False,
     autoflush=False,
     bind=test_engine,

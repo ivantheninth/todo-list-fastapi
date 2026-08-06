@@ -1,5 +1,5 @@
-from models import Task
-from schemas import (
+from app.models import Task
+from app.schemas import (
     TaskCreate,
     TaskRead,
     TaskUpdateAll,

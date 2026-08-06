@@ -1,9 +1,9 @@
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from mapper import task_mapper
-from models import Task
-from schemas import TaskCreate, TaskUpdateAll, TaskUpdatePartial
+from app.mapper import task_mapper
+from app.models import Task
+from app.schemas import TaskCreate, TaskUpdateAll, TaskUpdatePartial
 
 
 class TaskCrud:

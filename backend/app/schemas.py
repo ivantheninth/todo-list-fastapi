@@ -6,7 +6,7 @@
 
 from pydantic import BaseModel, ConfigDict # BaseModel is used to describe the structure of data and automatically validate it.
 
-# Validation of created tasks
+#Used for creating a new task.
 
 class TaskCreate(BaseModel):
     title: str

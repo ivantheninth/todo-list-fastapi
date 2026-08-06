@@ -2,9 +2,9 @@ from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
-from crud import task_crud
-from database import Base, engine, get_db
-from schemas import TaskCreate, TaskUpdateAll, TaskUpdatePartial
+from app.crud import task_crud
+from app.database import Base, engine, get_db
+from app.schemas import TaskCreate, TaskUpdateAll, TaskUpdatePartial
 
 
 Base.metadata.create_all(engine)

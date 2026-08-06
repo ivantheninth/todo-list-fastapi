@@ -22,7 +22,9 @@ services:
     restart: unless-stopped
 
   backend:
-    build: .
+    build:
+      context: ./backend
+      dockerfile: dockerfile
     expose:
       - "8000"
     environment:
