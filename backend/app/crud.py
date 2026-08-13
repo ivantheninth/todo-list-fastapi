@@ -28,6 +28,23 @@ class TaskCrud:
 
         return task_mapper.to_read(task)
 
+    def create_tasks_bulk(
+            self,
+            session: Session,
+            tasks_data: list[TaskCreate],
+    ):
+        created_tasks = []
+
+        for task_data in tasks_data:
+            task = self.create_task(
+                session,
+                task_data,
+            )
+
+            created_tasks.append(task)
+
+        return created_tasks
+
     def update_whole_task(
         self,
         session: Session,

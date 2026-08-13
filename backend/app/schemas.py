@@ -36,3 +36,19 @@ class TaskRead(BaseModel):
     completed: bool
     model_config = ConfigDict(from_attributes=True)
 
+class AITask(BaseModel):
+    title: str
+    note: str | None = None
+
+
+class ChatRequest(BaseModel):
+    message: str
+
+
+class ChatResponse(BaseModel):
+    answer: str
+    tasks: list[AITask] = []
+
+
+class BulkTaskCreate(BaseModel):
+    tasks: list[TaskCreate]

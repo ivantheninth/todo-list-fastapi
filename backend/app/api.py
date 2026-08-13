@@ -4,8 +4,8 @@ from sqlalchemy.orm import Session
 
 from app.crud import task_crud
 from app.database import Base, engine, get_db
-from app.schemas import TaskCreate, TaskUpdateAll, TaskUpdatePartial
-
+from app.schemas import TaskCreate, BulkTaskCreate, TaskUpdateAll, TaskUpdatePartial, ChatRequest, ChatResponse
+from app.services.llm import llm_service
 
 Base.metadata.create_all(engine)
 
@@ -56,6 +56,24 @@ def create_task_endpoint(
         db.rollback()
         raise
 
+@app.post("/tasks/bulk")
+def create_tasks_bulk_endpoint(
+    bulk_data: BulkTaskCreate,
+    db: Session = Depends(get_db),
+):
+    try:
+        tasks = task_crud.create_tasks_bulk(
+            db,
+            bulk_data.tasks,
+        )
+
+        db.commit()
+
+        return tasks
+
+    except Exception:
+        db.rollback()
+        raise
 
 @app.put("/tasks/{task_id}")
 def update_whole_task_endpoint(
@@ -134,3 +152,15 @@ def delete_task(
         raise
 
     return task
+
+@app.post("/chat", response_model=ChatResponse)
+async def chat(user_request: ChatRequest):
+    try:
+         return await llm_service.ask(user_request.message)
+
+    except RuntimeError:
+        raise HTTPException(
+            status_code=503,
+            detail="LLM service is temporarily unavailable",
+        )
+
