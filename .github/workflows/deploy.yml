@@ -6,9 +6,6 @@ on:
       - Tests
     types:
       - completed
-  push:
-    branches:
-      - main
 
 jobs:
   deploy:
