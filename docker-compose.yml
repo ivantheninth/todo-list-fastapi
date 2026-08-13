@@ -11,7 +11,7 @@ services:
     restart: unless-stopped
 
   frontend:
-    image: ghcr.io/ivantheninth/todo-list-frontend:latest
+    image: ghcr.io/${GHCR_OWNER}/todo-list-frontend:latest
     expose:
       - "3000"
     environment:
@@ -20,11 +20,13 @@ services:
     restart: unless-stopped
 
   backend:
-    image: ghcr.io/ivantheninth/todo-list-backend:latest
+    image: ghcr.io/${GHCR_OWNER}/todo-list-backend:latest
     expose:
       - "8000"
     environment:
       DATABASE_URL: ${DATABASE_URL}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OPENAI_MODEL: ${OPENAI_MODEL}
     depends_on:
       postgres:
         condition: service_healthy
@@ -39,7 +41,11 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}",
+        ]
       interval: 5s
       timeout: 5s
       retries: 5
