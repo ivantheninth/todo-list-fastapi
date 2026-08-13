@@ -6,10 +6,11 @@ from sqlalchemy.orm import sessionmaker
 
 from app.api import app
 from app.database import Base, get_db
+import os
 
-
-TEST_DATABASE_URL = (
-    "postgresql://ivandevyatkin@localhost:5432/todo_test_db"
+TEST_DATABASE_URL = os.getenv(
+    "DATABASE_URL",
+    "postgresql://postgres:postgres@localhost:5432/todo_test_db",
 )
 
 test_engine = create_engine(TEST_DATABASE_URL)
