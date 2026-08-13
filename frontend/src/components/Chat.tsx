@@ -30,6 +30,10 @@ type ChatProps = {
 };
 
 
+function generateId() {
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
 export default function Chat({
   onTasksCreated,
 }: ChatProps) {
@@ -71,7 +75,7 @@ export default function Chat({
   }
 
   const userMessage: Message = {
-    id: crypto.randomUUID(),
+    id: generateId(),
     role: "user",
     text,
   };
@@ -115,7 +119,7 @@ export default function Chat({
     setMessages((previous) => [
       ...previous,
       {
-        id: crypto.randomUUID(),
+        id: generateId(),
         role: "assistant",
         text: data.answer,
       },
@@ -128,7 +132,7 @@ export default function Chat({
     setMessages((previous) => [
       ...previous,
       {
-        id: crypto.randomUUID(),
+        id: generateId(),
         role: "assistant",
         text: "Sorry, something went wrong.",
       },
@@ -174,7 +178,7 @@ export default function Chat({
       setMessages((previous) => [
         ...previous,
         {
-          id: crypto.randomUUID(),
+          id: generateId(),
           role: "assistant",
           text: `${suggestedTasks.length} tasks created successfully.`,
         },
@@ -189,7 +193,7 @@ export default function Chat({
       setMessages((previous) => [
         ...previous,
         {
-          id: crypto.randomUUID(),
+          id: generateId(),
           role: "assistant",
           text: "I couldn't create the tasks. Please try again.",
         },
