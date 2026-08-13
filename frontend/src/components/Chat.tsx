@@ -60,72 +60,84 @@ export default function Chat({
 
 
   async function sendMessage() {
-    const text = input.trim();
+  console.log("=== sendMessage called ===");
 
-    if (!text || isSending) {
-      return;
+  const text = input.trim();
+  console.log("Input:", text);
+
+  if (!text || isSending) {
+    console.log("Request cancelled");
+    return;
+  }
+
+  const userMessage: Message = {
+    id: crypto.randomUUID(),
+    role: "user",
+    text,
+  };
+
+  setMessages((previous) => [
+    ...previous,
+    userMessage,
+  ]);
+
+  setInput("");
+  setSuggestedTasks([]);
+  setIsSending(true);
+
+  try {
+    console.log("Before fetch");
+
+    const response = await fetch("/chat", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        message: text,
+      }),
+    });
+
+    console.log("After fetch");
+    console.log("Status:", response.status);
+
+    if (!response.ok) {
+      throw new Error(
+        `Request failed: ${response.status}`
+      );
     }
 
-    const userMessage: Message = {
-      id: crypto.randomUUID(),
-      role: "user",
-      text,
-    };
+    const data =
+      (await response.json()) as ChatApiResponse;
+
+    console.log("Response:", data);
 
     setMessages((previous) => [
       ...previous,
-      userMessage,
+      {
+        id: crypto.randomUUID(),
+        role: "assistant",
+        text: data.answer,
+      },
     ]);
 
-    setInput("");
-    setSuggestedTasks([]);
-    setIsSending(true);
+    setSuggestedTasks(data.tasks ?? []);
+  } catch (error) {
+    console.error("Chat error:", error);
 
-    try {
-      const response = await fetch("/chat", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          message: text,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(
-          `Request failed: ${response.status}`
-        );
-      }
-
-      const data =
-        (await response.json()) as ChatApiResponse;
-
-      setMessages((previous) => [
-        ...previous,
-        {
-          id: crypto.randomUUID(),
-          role: "assistant",
-          text: data.answer,
-        },
-      ]);
-
-      setSuggestedTasks(data.tasks ?? []);
-    } catch (error) {
-      console.error(error);
-
-      setMessages((previous) => [
-        ...previous,
-        {
-          id: crypto.randomUUID(),
-          role: "assistant",
-          text: "Sorry, something went wrong.",
-        },
-      ]);
-    } finally {
-      setIsSending(false);
-    }
+    setMessages((previous) => [
+      ...previous,
+      {
+        id: crypto.randomUUID(),
+        role: "assistant",
+        text: "Sorry, something went wrong.",
+      },
+    ]);
+  } finally {
+    console.log("Finished");
+    setIsSending(false);
   }
+}
 
 
   async function createSuggestedTasks() {
