@@ -11,9 +11,7 @@ services:
     restart: unless-stopped
 
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
+    image: ghcr.io/ivantheninth/todo-list-frontend:latest
     expose:
       - "3000"
     environment:
@@ -22,9 +20,7 @@ services:
     restart: unless-stopped
 
   backend:
-    build:
-      context: ./backend
-      dockerfile: dockerfile
+    image: ghcr.io/ivantheninth/todo-list-backend:latest
     expose:
       - "8000"
     environment:
@@ -43,7 +39,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
       retries: 5

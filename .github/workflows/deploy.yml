@@ -7,28 +7,65 @@ on:
     types:
       - completed
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
-  deploy:
+  build-and-deploy:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
 
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push backend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          file: ./backend/dockerfile
+          push: true
+          tags: ghcr.io/ivantheninth/todo-list-backend:latest
+
+      - name: Build and push frontend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          push: true
+          tags: ghcr.io/ivantheninth/todo-list-frontend:latest
+
       - name: Deploy to VM
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.GCP_HOST }}
           username: ${{ secrets.GCP_USER }}
           key: ${{ secrets.GCP_SSH_KEY }}
-          command_timeout: 30m
+          command_timeout: 10m
+
           script: |
             set -e
+
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io \
+              -u ${{ github.actor }} \
+              --password-stdin
 
             cd ${{ secrets.PROJECT_PATH }}
 
             git fetch origin
             git reset --hard origin/main
 
-            docker-compose up -d --build --remove-orphans
+            docker compose pull
+
+            docker compose up -d --remove-orphans
 
             docker image prune -f
