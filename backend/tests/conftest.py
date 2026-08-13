@@ -8,10 +8,16 @@ from app.api import app
 from app.database import Base, get_db
 import os
 
-TEST_DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    "postgresql://postgres:postgres@localhost:5432/todo_test_db",
-)
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+
+
+TEST_DATABASE_URL = os.environ["TEST_DATABASE_URL"]
+
+if "test" not in TEST_DATABASE_URL:
+    raise RuntimeError(
+        "TEST_DATABASE_URL must point to a test database"
+    )
 
 test_engine = create_engine(TEST_DATABASE_URL)
 
