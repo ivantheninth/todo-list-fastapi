@@ -3,11 +3,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 from app.crud import task_crud
-from app.database import Base, engine, get_db
+from app.database import get_db
 from app.schemas import TaskCreate, BulkTaskCreate, TaskUpdateAll, TaskUpdatePartial, ChatRequest, ChatResponse
 from app.services.llm import llm_service
 
-Base.metadata.create_all(engine)
+from app.core.config import settings
 
 app = FastAPI()
 
