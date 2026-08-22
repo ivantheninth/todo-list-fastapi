@@ -7,8 +7,10 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from app.api import app
 from app.database import Base, get_db
 
+from app.core.config import settings
 
-TEST_DATABASE_URL = os.environ["TEST_DATABASE_URL"]
+
+TEST_DATABASE_URL = settings.TEST_DATABASE_URL
 
 if "test" not in TEST_DATABASE_URL:
     raise RuntimeError(
