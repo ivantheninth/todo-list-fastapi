@@ -7,3 +7,5 @@ pytest==9.1.1
 openai
 pydantic-settings
 httpx
+asyncpg
+pytest-asyncio

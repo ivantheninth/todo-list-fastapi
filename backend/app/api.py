@@ -1,6 +1,5 @@
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy.orm import Session
 
 from app.crud import task_crud
 from app.database import get_db
@@ -8,6 +7,8 @@ from app.schemas import TaskCreate, BulkTaskCreate, TaskUpdateAll, TaskUpdatePar
 from app.services.llm import llm_service
 
 from app.core.config import settings
+
+from sqlalchemy.ext.asyncio import AsyncSession
 
 app = FastAPI()
 
@@ -32,13 +33,13 @@ def root():
 
 
 @app.get("/tasks")
-def read_all_tasks(db: Session = Depends(get_db)):
-    return task_crud.get_all_tasks(db)
+async def read_all_tasks(db: AsyncSession = Depends(get_db)):
+    return await task_crud.get_all_tasks(db)
 
 
 @app.get("/tasks/{task_id}")
-def read_task(task_id: int, db: Session = Depends(get_db)):
-    task = task_crud.get_task_by_id(db, task_id)
+async def read_task(task_id: int, db: AsyncSession = Depends(get_db)):
+    task = await task_crud.get_task_by_id(db, task_id)
 
     if task is None:
         raise HTTPException(
@@ -50,44 +51,44 @@ def read_task(task_id: int, db: Session = Depends(get_db)):
 
 
 @app.post("/tasks")
-def create_task_endpoint(
+async def create_task_endpoint(
     task_data: TaskCreate,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
     try:
-        task = task_crud.create_task(db, task_data)
-        db.commit()
+        task = await task_crud.create_task(db, task_data)
+        await db.commit()
         return task
     except Exception:
-        db.rollback()
+        await db.rollback()
         raise
 
 @app.post("/tasks/bulk")
-def create_tasks_bulk_endpoint(
+async def create_tasks_bulk_endpoint(
     bulk_data: BulkTaskCreate,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
     try:
-        tasks = task_crud.create_tasks_bulk(
+        tasks = await task_crud.create_tasks_bulk(
             db,
             bulk_data.tasks,
         )
 
-        db.commit()
+        await db.commit()
 
         return tasks
 
     except Exception:
-        db.rollback()
+        await db.rollback()
         raise
 
 @app.put("/tasks/{task_id}")
-def update_whole_task_endpoint(
+async def update_whole_task_endpoint(
     task_id: int,
     task_data: TaskUpdateAll,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
-    task = task_crud.update_whole_task(
+    task = await task_crud.update_whole_task(
         db,
         task_id,
         task_data,
@@ -100,21 +101,21 @@ def update_whole_task_endpoint(
         )
 
     try:
-        db.commit()
+        await db.commit()
     except Exception:
-        db.rollback()
+        await db.rollback()
         raise
 
     return task
 
 
 @app.patch("/tasks/{task_id}")
-def update_task_partially_endpoint(
+async def update_task_partially_endpoint(
     task_id: int,
     task_data: TaskUpdatePartial,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
-    task = task_crud.update_task_partially(
+    task = await task_crud.update_task_partially(
         db,
         task_id,
         task_data,
@@ -127,20 +128,20 @@ def update_task_partially_endpoint(
         )
 
     try:
-        db.commit()
+        await db.commit()
     except Exception:
-        db.rollback()
+        await db.rollback()
         raise
 
     return task
 
 
 @app.delete("/tasks/{task_id}")
-def delete_task(
+async def delete_task(
     task_id: int,
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ):
-    task = task_crud.delete_task(
+    task = await task_crud.delete_task(
         db,
         task_id,
     )
@@ -152,9 +153,9 @@ def delete_task(
         )
 
     try:
-        db.commit()
+        await db.commit()
     except Exception:
-        db.rollback()
+        await db.rollback()
         raise
 
     return task

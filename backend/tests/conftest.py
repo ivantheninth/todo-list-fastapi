@@ -1,15 +1,11 @@
-import pytest
+import os
 
-from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+import pytest_asyncio
+from httpx import ASGITransport, AsyncClient
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 
 from app.api import app
 from app.database import Base, get_db
-import os
-
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 
 
 TEST_DATABASE_URL = os.environ["TEST_DATABASE_URL"]
@@ -19,38 +15,50 @@ if "test" not in TEST_DATABASE_URL:
         "TEST_DATABASE_URL must point to a test database"
     )
 
-test_engine = create_engine(TEST_DATABASE_URL)
+test_engine = create_async_engine(TEST_DATABASE_URL)
 
-TestingSessionLocal = sessionmaker(
-    autocommit=False,
+TestingSessionLocal = async_sessionmaker(
+    expire_on_commit=False,
     autoflush=False,
     bind=test_engine,
 )
 
-Base.metadata.create_all(bind=test_engine)
 
-@pytest.fixture
-def db_session():
-    connection = test_engine.connect()
-    transaction = connection.begin()
+@pytest_asyncio.fixture(scope="session", autouse=True)
+async def setup_database():
+    async with test_engine.begin() as connection:
+        await connection.run_sync(Base.metadata.create_all)
 
-    session = TestingSessionLocal(bind=connection)
+    yield
 
-    yield session
+    async with test_engine.begin() as connection:
+        await connection.run_sync(Base.metadata.drop_all)
 
-    session.close()
-    transaction.rollback()
-    connection.close()
+@pytest_asyncio.fixture
+async def db_session():
+    async with test_engine.connect() as connection:
+        transaction = await connection.begin()
 
+        session = TestingSessionLocal(bind=connection)
 
-@pytest.fixture
-def client(db_session):
-    def override_get_db():
-        yield db_session
+        yield session
+
+        await session.close()
+        await transaction.rollback()
+
+@pytest_asyncio.fixture
+async def client(db_session):
+    async def override_get_db():
+            yield db_session
 
     app.dependency_overrides[get_db] = override_get_db
 
-    with TestClient(app) as test_client:
-        yield test_client
+    transport = ASGITransport(app=app)
+
+    async with AsyncClient(
+        transport=transport,
+        base_url="http://test"
+    ) as async_client:
+        yield async_client
 
     app.dependency_overrides.clear()

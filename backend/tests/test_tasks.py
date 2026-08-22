@@ -1,11 +1,11 @@
-def test_create_task(client):
+async def test_create_task(client):
 
     payload = {
         "title": "Learn pytest",
         "note": "Write tests",
     }
 
-    response = client.post("/tasks", json=payload)
+    response = await client.post("/tasks", json=payload)
 
     assert response.status_code == 200
 
@@ -17,8 +17,8 @@ def test_create_task(client):
     assert isinstance(data["id"], int)
 
 
-def test_get_task_by_id(client):
-    create_response = client.post(
+async def test_get_task_by_id(client):
+    create_response = await client.post(
         "/tasks",
         json={
             "title": "Learn pytest",
@@ -28,7 +28,7 @@ def test_get_task_by_id(client):
 
     task_id = create_response.json()["id"]
 
-    response = client.get(f"/tasks/{task_id}")
+    response = await client.get(f"/tasks/{task_id}")
 
     assert response.status_code == 200
 
@@ -40,8 +40,8 @@ def test_get_task_by_id(client):
     assert data["completed"] is False
 
 
-def test_get_all_tasks(client):
-    client.post(
+async def test_get_all_tasks(client):
+    await client.post(
         "/tasks",
         json={
             "title": "First task",
@@ -49,7 +49,7 @@ def test_get_all_tasks(client):
         },
     )
 
-    client.post(
+    await client.post(
         "/tasks",
         json={
             "title": "Second task",
@@ -57,7 +57,7 @@ def test_get_all_tasks(client):
         },
     )
 
-    response = client.get("/tasks")
+    response = await client.get("/tasks")
 
     assert response.status_code == 200
 
@@ -68,8 +68,8 @@ def test_get_all_tasks(client):
     assert data[0]["title"] == "First task"
     assert data[1]["title"] == "Second task"
 
-def test_get_nonexistent_task(client):
-    response = client.get("/tasks/999999")
+async def test_get_nonexistent_task(client):
+    response = await client.get("/tasks/999999")
 
     assert response.status_code == 404
     assert response.json() == {
@@ -77,8 +77,8 @@ def test_get_nonexistent_task(client):
     }
 
 
-def test_update_whole_task(client):
-    create_response = client.post(
+async def test_update_whole_task(client):
+    create_response = await client.post(
         "/tasks",
         json={
             "title": "Old title",
@@ -94,7 +94,7 @@ def test_update_whole_task(client):
         "completed": True,
     }
 
-    response = client.put(
+    response = await client.put(
         f"/tasks/{task_id}",
         json=payload,
     )
@@ -109,8 +109,8 @@ def test_update_whole_task(client):
     assert data["completed"] is True
 
 
-def test_update_nonexistent_task(client):
-    response = client.put(
+async def test_update_nonexistent_task(client):
+    response = await client.put(
         "/tasks/999999",
         json={
             "title": "New title",
@@ -125,8 +125,8 @@ def test_update_nonexistent_task(client):
     }
 
 
-def test_update_task_partially(client):
-    create_response = client.post(
+async def test_update_task_partially(client):
+    create_response = await client.post(
         "/tasks",
         json={
             "title": "Old title",
@@ -136,7 +136,7 @@ def test_update_task_partially(client):
 
     task_id = create_response.json()["id"]
 
-    response = client.patch(
+    response = await client.patch(
         f"/tasks/{task_id}",
         json={
             "title": "Updated title",
@@ -153,8 +153,8 @@ def test_update_task_partially(client):
     assert data["completed"] is False
 
 
-def test_update_task_completed_partially(client):
-    create_response = client.post(
+async def test_update_task_completed_partially(client):
+    create_response = await client.post(
         "/tasks",
         json={
             "title": "Complete tests",
@@ -164,7 +164,7 @@ def test_update_task_completed_partially(client):
 
     task_id = create_response.json()["id"]
 
-    response = client.patch(
+    response = await client.patch(
         f"/tasks/{task_id}",
         json={
             "completed": True,
@@ -181,8 +181,8 @@ def test_update_task_completed_partially(client):
     assert data["completed"] is True
 
 
-def test_update_partially_nonexistent_task(client):
-    response = client.patch(
+async def test_update_partially_nonexistent_task(client):
+    response = await client.patch(
         "/tasks/999999",
         json={
             "title": "Updated title",
@@ -195,8 +195,8 @@ def test_update_partially_nonexistent_task(client):
     }
 
 
-def test_delete_task(client):
-    create_response = client.post(
+async def test_delete_task(client):
+    create_response = await client.post(
         "/tasks",
         json={
             "title": "Delete task",
@@ -207,12 +207,12 @@ def test_delete_task(client):
     created_task = create_response.json()
     task_id = created_task["id"]
 
-    response = client.delete(f"/tasks/{task_id}")
+    response = await client.delete(f"/tasks/{task_id}")
 
     assert response.status_code == 200
     assert response.json() == created_task
 
-    get_response = client.get(f"/tasks/{task_id}")
+    get_response = await client.get(f"/tasks/{task_id}")
 
     assert get_response.status_code == 404
     assert get_response.json() == {
@@ -220,8 +220,8 @@ def test_delete_task(client):
     }
 
 
-def test_delete_nonexistent_task(client):
-    response = client.delete("/tasks/999999")
+async def test_delete_nonexistent_task(client):
+    response = await client.delete("/tasks/999999")
 
     assert response.status_code == 404
     assert response.json() == {
@@ -229,8 +229,8 @@ def test_delete_nonexistent_task(client):
     }
 
 
-def test_create_task_without_title(client):
-    response = client.post(
+async def test_create_task_without_title(client):
+    response = await client.post(
         "/tasks",
         json={
             "note": "Task without title",
@@ -240,14 +240,14 @@ def test_create_task_without_title(client):
     assert response.status_code == 422
 
 
-def test_invalid_task_id(client):
-    response = client.get("/tasks/not-a-number")
+async def test_invalid_task_id(client):
+    response = await client.get("/tasks/not-a-number")
 
     assert response.status_code == 422
 
 
-def test_root(client):
-    response = client.get("/")
+async def test_root(client):
+    response = await client.get("/")
 
     assert response.status_code == 200
     assert response.json() == {

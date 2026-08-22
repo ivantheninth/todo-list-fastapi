@@ -1,15 +1,14 @@
 # the file configures the db connection for the app
 
-import os
+from sqlalchemy.orm import DeclarativeBase
 
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, DeclarativeBase
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 
 from app.core.config import settings
 
-engine = create_engine(settings.DATABASE_URL)
+engine = create_async_engine(settings.DATABASE_URL)
 
-SessionLocal = sessionmaker(
+SessionLocal = async_sessionmaker(
     autocommit=False,
     autoflush=False,
     bind=engine
@@ -18,6 +17,6 @@ SessionLocal = sessionmaker(
 class Base(DeclarativeBase):
     pass
 
-def get_db():
-   with SessionLocal() as db:
+async def get_db():
+   async with SessionLocal() as db:
        yield db
