@@ -16,6 +16,35 @@ async def test_create_task(client):
     assert data["completed"] is False
     assert isinstance(data["id"], int)
 
+async def test_create_tasks_bulk(client):
+
+    payload = {
+        "tasks": [
+            {
+                "title": "First bulk task",
+                "note": "First note"
+            },
+            {
+                "title": "Second bulk task",
+                "note": "Second note"
+            }
+        ]
+    }
+
+    response = await client.post("/tasks/bulk", json=payload)
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert len(data) == len(payload["tasks"])
+
+    for created_task, expected_task in zip(data, payload["tasks"]):
+        assert created_task["title"] == expected_task["title"]
+        assert created_task["note"] == expected_task["note"]
+        assert created_task["completed"] is False
+        assert isinstance(created_task["id"], int)
+
 
 async def test_get_task_by_id(client):
     create_response = await client.post(

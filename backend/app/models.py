@@ -7,7 +7,7 @@
 from sqlalchemy import String, Integer, Boolean # Import SQLAlchemy column types
 from sqlalchemy.orm import Mapped, mapped_column #import ORM typing and column mapping tools
 
-from app.database import Base
+from app.db.database import Base
 
 # Task model represents the "tasks" table
 class Task(Base):

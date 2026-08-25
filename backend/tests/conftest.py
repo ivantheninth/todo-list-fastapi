@@ -1,11 +1,9 @@
-import os
-
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 
-from app.api import app
-from app.database import Base, get_db
+from app.main import app
+from app.db.database import Base, get_db
 
 from app.core.config import settings
 
