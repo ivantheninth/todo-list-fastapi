@@ -1,5 +1,5 @@
-from app.models import Task
-from app.schemas import (
+from app.db.models.task import Task
+from app.schemas.task import (
     TaskCreate,
     TaskRead,
     TaskUpdateAll,
@@ -24,7 +24,5 @@ class TaskMapper:
         for key, value in task_data.model_dump(exclude_unset=True).items():
             setattr(task, key, value)
 
-    def mark_done(self, task: Task) -> None:
-        task.completed = True
 
 task_mapper = TaskMapper()

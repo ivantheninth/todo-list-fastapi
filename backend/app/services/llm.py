@@ -4,7 +4,7 @@ from openai import AsyncOpenAI, OpenAIError
 from pydantic import ValidationError
 
 from app.core.config import settings
-from app.schemas import ChatResponse
+from app.schemas.chat import ChatResponse
 
 
 SYSTEM_PROMPT = """

@@ -7,7 +7,7 @@ async def test_create_task(client):
 
     response = await client.post("/tasks", json=payload)
 
-    assert response.status_code == 200
+    assert response.status_code == 201
 
     data = response.json()
 
@@ -33,7 +33,7 @@ async def test_create_tasks_bulk(client):
 
     response = await client.post("/tasks/bulk", json=payload)
 
-    assert response.status_code == 200
+    assert response.status_code == 201
 
     data = response.json()
 
@@ -282,3 +282,9 @@ async def test_root(client):
     assert response.json() == {
         "message": "App is running",
     }
+
+async def test_health(client):
+    response = await client.get("/health")
+
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok"}

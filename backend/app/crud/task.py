@@ -2,9 +2,9 @@ from sqlalchemy import select
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.mapper import task_mapper
-from app.models import Task
-from app.schemas import TaskCreate, TaskUpdateAll, TaskUpdatePartial
+from app.mappers.task import task_mapper
+from app.db.models.task import Task
+from app.schemas.task import TaskCreate, TaskRead, TaskUpdateAll, TaskUpdatePartial
 
 
 class TaskCrud:
@@ -21,7 +21,8 @@ class TaskCrud:
         self,
         session: AsyncSession,
         task_data: TaskCreate,
-    ):
+    ) -> TaskRead:
+
         task = task_mapper.to_model(task_data)
 
         session.add(task)
@@ -33,7 +34,7 @@ class TaskCrud:
             self,
             session: AsyncSession,
             tasks_data: list[TaskCreate],
-    ):
+    ) -> list[TaskRead]:
         created_tasks = []
 
         for task_data in tasks_data:
@@ -51,7 +52,8 @@ class TaskCrud:
         session: AsyncSession,
         task_id: int,
         task_data: TaskUpdateAll,
-    ):
+    ) -> TaskRead | None:
+
         task = await session.get(Task, task_id)
 
         if task is None:
@@ -67,7 +69,8 @@ class TaskCrud:
         session: AsyncSession,
         task_id: int,
         task_data: TaskUpdatePartial,
-    ):
+    ) -> TaskRead | None:
+
         task = await session.get(Task, task_id)
 
         if task is None:
@@ -81,7 +84,8 @@ class TaskCrud:
     async def get_all_tasks(
         self,
         session: AsyncSession,
-    ):
+    ) -> list[TaskRead]:
+
         stmt = select(Task)
         result = await session.execute(stmt)
         tasks = result.scalars().all()
@@ -95,26 +99,12 @@ class TaskCrud:
         self,
         session: AsyncSession,
         task_id: int,
-    ):
+    ) -> TaskRead | None:
+
         task = await session.get(Task, task_id)
 
         if task is None:
             return None
-
-        return task_mapper.to_read(task)
-
-    async def mark_task_done(
-        self,
-        session: AsyncSession,
-        task_id: int,
-    ):
-        task = await session.get(Task, task_id)
-
-        if task is None:
-            return None
-
-        task_mapper.mark_done(task)
-        await session.flush()
 
         return task_mapper.to_read(task)
 
@@ -122,7 +112,8 @@ class TaskCrud:
         self,
         session: AsyncSession,
         task_id: int,
-    ):
+    ) -> TaskRead | None:
+
         task = await session.get(Task, task_id)
 
         if task is None:
