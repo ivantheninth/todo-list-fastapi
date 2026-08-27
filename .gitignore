@@ -19,4 +19,6 @@ frontend/.tanstack/
 frontend/.lovable/
 
 # macOS
+.DS_Store.env
+.env
 .DS_Store

@@ -11,6 +11,7 @@ services:
     restart: unless-stopped
 
   frontend:
+    platform: linux/amd64
     image: ghcr.io/${GHCR_OWNER}/todo-list-frontend:latest
     expose:
       - "3000"
@@ -20,6 +21,10 @@ services:
     restart: unless-stopped
 
   backend:
+    platform: linux/amd64
+    build:
+      context: ./backend
+      dockerfile: dockerfile
     image: ghcr.io/${GHCR_OWNER}/todo-list-backend:latest
     expose:
       - "8000"
