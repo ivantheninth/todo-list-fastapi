@@ -47,6 +47,12 @@ function Index() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
+  const [authMode, setAuthMode] = useState<
+    "login" | "register"
+  >("login");
+
+  const [authLoading, setAuthLoading] = useState(false);
+
   const [token, setToken] = useState<string | null>(() => {
     if (typeof window === "undefined") {
       return null;
@@ -56,13 +62,62 @@ function Index() {
   });
 
 
+  async function performLogin() {
+    const res = await fetch("/auth/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email,
+        password,
+      }),
+    });
+
+    if (!res.ok) {
+      throw new Error("Incorrect email or password");
+    }
+
+    const data: TokenResponse = await res.json();
+
+    localStorage.setItem(
+      "access_token",
+      data.access_token,
+    );
+
+    setToken(data.access_token);
+    setPassword("");
+  }
+
+
   async function login(e: FormEvent) {
     e.preventDefault();
 
     setError(null);
+    setAuthLoading(true);
 
     try {
-      const res = await fetch("/auth/login", {
+      await performLogin();
+    } catch (e) {
+      setError(
+        e instanceof Error
+          ? e.message
+          : "Login failed",
+      );
+    } finally {
+      setAuthLoading(false);
+    }
+  }
+
+
+  async function register(e: FormEvent) {
+    e.preventDefault();
+
+    setError(null);
+    setAuthLoading(true);
+
+    try {
+      const res = await fetch("/auth/register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -73,26 +128,33 @@ function Index() {
         }),
       });
 
-      if (!res.ok) {
-        throw new Error("Incorrect email or password");
+      if (res.status === 409) {
+        throw new Error("Email already registered");
       }
 
-      const data: TokenResponse = await res.json();
+      if (!res.ok) {
+        throw new Error("Registration failed");
+      }
 
-      localStorage.setItem(
-        "access_token",
-        data.access_token,
-      );
-
-      setToken(data.access_token);
-      setPassword("");
+      await performLogin();
     } catch (e) {
       setError(
         e instanceof Error
           ? e.message
-          : "Login failed",
+          : "Registration failed",
       );
+    } finally {
+      setAuthLoading(false);
     }
+  }
+
+
+  function switchAuthMode(
+    mode: "login" | "register",
+  ) {
+    setAuthMode(mode);
+    setError(null);
+    setPassword("");
   }
 
 
@@ -105,6 +167,7 @@ function Index() {
     setPassword("");
     setError(null);
     setShowChat(false);
+    setAuthMode("login");
   }
 
 
@@ -125,6 +188,7 @@ function Index() {
 
       if (res.status === 401 || res.status === 403) {
         logout();
+
         throw new Error(
           "Your session has expired. Please log in again.",
         );
@@ -349,16 +413,58 @@ function Index() {
           </p>
 
           <h1 className="mt-2 text-4xl font-semibold tracking-tight">
-            Login
+            {authMode === "login"
+              ? "Login"
+              : "Create account"}
           </h1>
 
           <p className="mt-2 text-muted-foreground">
-            Sign in to access your tasks.
+            {authMode === "login"
+              ? "Sign in to access your tasks."
+              : "Create an account to start using your task list."}
           </p>
 
+
+          <div className="mt-8 flex gap-1 rounded-xl border border-border bg-card p-1">
+
+            <button
+              type="button"
+              onClick={() =>
+                switchAuthMode("login")
+              }
+              className={`flex-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                authMode === "login"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+              }`}
+            >
+              Login
+            </button>
+
+            <button
+              type="button"
+              onClick={() =>
+                switchAuthMode("register")
+              }
+              className={`flex-1 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                authMode === "register"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+              }`}
+            >
+              Register
+            </button>
+
+          </div>
+
+
           <form
-            onSubmit={login}
-            className="mt-8 flex flex-col gap-3 rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-warm)]"
+            onSubmit={
+              authMode === "login"
+                ? login
+                : register
+            }
+            className="mt-3 flex flex-col gap-3 rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-warm)]"
           >
 
             <input
@@ -380,16 +486,25 @@ function Index() {
                 setPassword(e.target.value)
               }
               placeholder="Password"
-              autoComplete="current-password"
+              autoComplete={
+                authMode === "login"
+                  ? "current-password"
+                  : "new-password"
+              }
               required
               className="rounded-lg border border-border bg-background px-4 py-3 outline-none placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring/30"
             />
 
             <button
               type="submit"
-              className="rounded-lg bg-primary px-5 py-3 font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+              disabled={authLoading}
+              className="rounded-lg bg-primary px-5 py-3 font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Login
+              {authLoading
+                ? "Please wait..."
+                : authMode === "login"
+                  ? "Login"
+                  : "Create account"}
             </button>
 
             {error && (
