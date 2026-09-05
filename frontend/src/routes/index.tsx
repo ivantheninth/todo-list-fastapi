@@ -17,6 +17,12 @@ type Task = {
 };
 
 
+type TokenResponse = {
+  access_token: string;
+  token_type: string;
+};
+
+
 const API_URL = "/tasks";
 
 
@@ -38,19 +44,97 @@ function Index() {
 
   const [showChat, setShowChat] = useState(false);
 
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const [token, setToken] = useState<string | null>(() => {
+    if (typeof window === "undefined") {
+      return null;
+    }
+
+    return localStorage.getItem("access_token");
+  });
+
+
+  async function login(e: FormEvent) {
+    e.preventDefault();
+
+    setError(null);
+
+    try {
+      const res = await fetch("/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          password,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Incorrect email or password");
+      }
+
+      const data: TokenResponse = await res.json();
+
+      localStorage.setItem(
+        "access_token",
+        data.access_token,
+      );
+
+      setToken(data.access_token);
+      setPassword("");
+    } catch (e) {
+      setError(
+        e instanceof Error
+          ? e.message
+          : "Login failed",
+      );
+    }
+  }
+
+
+  function logout() {
+    localStorage.removeItem("access_token");
+
+    setToken(null);
+    setTasks([]);
+    setEmail("");
+    setPassword("");
+    setError(null);
+    setShowChat(false);
+  }
+
 
   async function loadTasks() {
+    if (!token) {
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
     try {
-      const res = await fetch(API_URL);
+      const res = await fetch(API_URL, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (res.status === 401 || res.status === 403) {
+        logout();
+        throw new Error(
+          "Your session has expired. Please log in again.",
+        );
+      }
 
       if (!res.ok) {
         throw new Error("Failed to load tasks");
       }
 
-      const data = await res.json();
+      const data: Task[] = await res.json();
 
       setTasks(data);
     } catch (e) {
@@ -66,12 +150,18 @@ function Index() {
 
 
   useEffect(() => {
-    loadTasks();
-  }, []);
+    if (token) {
+      loadTasks();
+    }
+  }, [token]);
 
 
   async function createTask(e: FormEvent) {
     e.preventDefault();
+
+    if (!token) {
+      return;
+    }
 
     if (!title.trim()) {
       setError("Title is required");
@@ -84,6 +174,7 @@ function Index() {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
         title: title.trim(),
@@ -91,6 +182,11 @@ function Index() {
         completed: false,
       }),
     });
+
+    if (res.status === 401 || res.status === 403) {
+      logout();
+      return;
+    }
 
     if (!res.ok) {
       setError("Failed to create task");
@@ -105,16 +201,27 @@ function Index() {
 
 
   async function toggleCompleted(task: Task) {
+    if (!token) {
+      return;
+    }
+
+    setError(null);
+
     const res = await fetch(`${API_URL}/${task.id}`, {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
-        ...task,
         completed: !task.completed,
       }),
     });
+
+    if (res.status === 401 || res.status === 403) {
+      logout();
+      return;
+    }
 
     if (!res.ok) {
       setError("Failed to update task");
@@ -133,22 +240,33 @@ function Index() {
 
 
   async function saveEdit(task: Task) {
+    if (!token) {
+      return;
+    }
+
     if (!editTitle.trim()) {
       setError("Title is required");
       return;
     }
 
+    setError(null);
+
     const res = await fetch(`${API_URL}/${task.id}`, {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
         title: editTitle.trim(),
         note: editNote.trim(),
-        completed: task.completed,
       }),
     });
+
+    if (res.status === 401 || res.status === 403) {
+      logout();
+      return;
+    }
 
     if (!res.ok) {
       setError("Failed to update task");
@@ -162,9 +280,23 @@ function Index() {
 
 
   async function deleteTask(id: Task["id"]) {
+    if (!token) {
+      return;
+    }
+
+    setError(null);
+
     const res = await fetch(`${API_URL}/${id}`, {
       method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
     });
+
+    if (res.status === 401 || res.status === 403) {
+      logout();
+      return;
+    }
 
     if (!res.ok) {
       setError("Failed to delete task");
@@ -207,18 +339,100 @@ function Index() {
   });
 
 
+  if (!token) {
+    return (
+      <div className="min-h-screen bg-background text-foreground">
+        <div className="mx-auto max-w-md px-6 py-16">
+
+          <p className="text-sm uppercase tracking-[0.2em] text-muted-foreground">
+            ToDo List
+          </p>
+
+          <h1 className="mt-2 text-4xl font-semibold tracking-tight">
+            Login
+          </h1>
+
+          <p className="mt-2 text-muted-foreground">
+            Sign in to access your tasks.
+          </p>
+
+          <form
+            onSubmit={login}
+            className="mt-8 flex flex-col gap-3 rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-warm)]"
+          >
+
+            <input
+              type="email"
+              value={email}
+              onChange={(e) =>
+                setEmail(e.target.value)
+              }
+              placeholder="Email"
+              autoComplete="email"
+              required
+              className="rounded-lg border border-border bg-background px-4 py-3 outline-none placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring/30"
+            />
+
+            <input
+              type="password"
+              value={password}
+              onChange={(e) =>
+                setPassword(e.target.value)
+              }
+              placeholder="Password"
+              autoComplete="current-password"
+              required
+              className="rounded-lg border border-border bg-background px-4 py-3 outline-none placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring/30"
+            />
+
+            <button
+              type="submit"
+              className="rounded-lg bg-primary px-5 py-3 font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            >
+              Login
+            </button>
+
+            {error && (
+              <div className="rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+                {error}
+              </div>
+            )}
+
+          </form>
+
+        </div>
+      </div>
+    );
+  }
+
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="mx-auto max-w-2xl px-6 py-12 sm:py-16">
 
         <header className="mb-10">
-          <p className="text-sm uppercase tracking-[0.2em] text-muted-foreground">
-            ToDo List
-          </p>
 
-          <h1 className="mt-2 text-4xl font-semibold tracking-tight sm:text-5xl">
-            Today's tasks
-          </h1>
+          <div className="flex items-start justify-between gap-4">
+
+            <div>
+              <p className="text-sm uppercase tracking-[0.2em] text-muted-foreground">
+                ToDo List
+              </p>
+
+              <h1 className="mt-2 text-4xl font-semibold tracking-tight sm:text-5xl">
+                Today's tasks
+              </h1>
+            </div>
+
+            <button
+              type="button"
+              onClick={logout}
+              className="rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            >
+              Logout
+            </button>
+
+          </div>
 
           <p className="mt-2 text-muted-foreground">
             {tasks.length === 0
@@ -237,6 +451,7 @@ function Index() {
               ? "Hide AI Assistant"
               : "✨ Open AI Assistant"}
           </button>
+
         </header>
 
 
@@ -335,6 +550,7 @@ function Index() {
               </button>
             ))}
           </div>
+
         </div>
 
 
@@ -487,6 +703,7 @@ function Index() {
                       </button>
 
                     </div>
+
                   </div>
                 )}
 
