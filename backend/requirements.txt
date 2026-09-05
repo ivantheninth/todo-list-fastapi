@@ -11,4 +11,4 @@ pytest-asyncio
 greenlet
 alembic
 PyJWT
-pwdlib
+pwdlib[argon2]
