@@ -22,15 +22,23 @@ async def read_all_tasks(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return await task_crud.get_all_tasks(db)
+    return await task_crud.get_all_tasks(
+        session=db,
+        user_id=current_user.id
+    )
 
 
 @router.get("/{task_id}", response_model=TaskRead)
 async def read_task(
     task_id: int,
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
-    task = await task_crud.get_task_by_id(db, task_id)
+    task = await task_crud.get_task_by_id(
+        session=db,
+        task_id=task_id,
+        user_id=current_user.id,
+    )
 
     if task is None:
         raise HTTPException(
@@ -45,11 +53,18 @@ async def read_task(
 async def create_task_endpoint(
     task_data: TaskCreate,
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     try:
-        task = await task_crud.create_task(db, task_data)
+        task = await task_crud.create_task(
+            session=db,
+            task_data=task_data,
+            user_id=current_user.id,
+        )
+
         await db.commit()
         return task
+
     except Exception:
         await db.rollback()
         raise
@@ -59,11 +74,13 @@ async def create_task_endpoint(
 async def create_tasks_bulk_endpoint(
     bulk_data: BulkTaskCreate,
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     try:
         tasks = await task_crud.create_tasks_bulk(
-            db,
-            bulk_data.tasks,
+            session=db,
+            tasks_data=bulk_data.tasks,
+            user_id=current_user.id,
         )
 
         await db.commit()
@@ -79,11 +96,13 @@ async def update_whole_task_endpoint(
     task_id: int,
     task_data: TaskUpdateAll,
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     task = await task_crud.update_whole_task(
-        db,
-        task_id,
-        task_data,
+        session=db,
+        task_id=task_id,
+        user_id=current_user.id,
+        task_data=task_data,
     )
 
     if task is None:
@@ -106,11 +125,13 @@ async def update_task_partially_endpoint(
     task_id: int,
     task_data: TaskUpdatePartial,
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     task = await task_crud.update_task_partially(
-        db,
-        task_id,
-        task_data,
+        session=db,
+        task_id=task_id,
+        user_id=current_user.id,
+        task_data=task_data,
     )
 
     if task is None:
@@ -132,10 +153,12 @@ async def update_task_partially_endpoint(
 async def delete_task(
     task_id: int,
     db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     task = await task_crud.delete_task(
-        db,
-        task_id,
+        session=db,
+        task_id=task_id,
+        user_id=current_user.id
     )
 
     if task is None:

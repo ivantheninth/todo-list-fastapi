@@ -1,7 +1,6 @@
 fastapi==0.116.1
 uvicorn==0.35.0
 sqlalchemy==2.0.41
-psycopg2-binary==2.9.10
 pydantic==2.11.7
 pytest==9.1.1
 openai
@@ -10,3 +9,6 @@ httpx
 asyncpg
 pytest-asyncio
 greenlet
+alembic
+PyJWT
+pwdlib

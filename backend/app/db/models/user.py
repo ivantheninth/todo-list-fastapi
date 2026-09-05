@@ -1,7 +1,12 @@
+from typing import TYPE_CHECKING
+
 from sqlalchemy import String, Integer
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.database import Base
+
+if TYPE_CHECKING:
+    from app.db.models.task import Task
 
 
 class User(Base):
@@ -22,3 +27,5 @@ class User(Base):
         String,
         nullable=False,
     )
+
+    tasks: Mapped[list["Task"]] = relationship(back_populates="user")

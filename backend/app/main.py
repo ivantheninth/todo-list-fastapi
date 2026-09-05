@@ -23,7 +23,10 @@ app.add_middleware(
         "PATCH",
         "DELETE",
     ],
-    allow_headers=["Content-Type"],
+    allow_headers=[
+        "Content-Type",
+        "Authorization",
+    ],
 )
 
 app.include_router(tasks_router)

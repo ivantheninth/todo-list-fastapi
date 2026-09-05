@@ -42,5 +42,12 @@ class UserCrud:
 
         return user
 
+    async def get_user_by_id(
+            self,
+            session: AsyncSession,
+            user_id: int,
+    ) -> User | None:
+        return await session.get(User, user_id)
+
 
 user_crud = UserCrud()

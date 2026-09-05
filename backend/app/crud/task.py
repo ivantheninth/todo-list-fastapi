@@ -17,13 +17,31 @@ class TaskCrud:
 
         return cls._instance
 
+    async def _get_task_model(
+            self,
+            session: AsyncSession,
+            task_id: int,
+            user_id: int,
+    ) -> Task | None:
+
+        result = await session.execute(
+            select(Task).where(
+                Task.id == task_id,
+                Task.user_id == user_id,
+            )
+        )
+
+        return result.scalar_one_or_none()
+
     async def create_task(
         self,
         session: AsyncSession,
         task_data: TaskCreate,
+        user_id: int
     ) -> TaskRead:
 
         task = task_mapper.to_model(task_data)
+        task.user_id = user_id
 
         session.add(task)
         await session.flush()
@@ -34,13 +52,16 @@ class TaskCrud:
             self,
             session: AsyncSession,
             tasks_data: list[TaskCreate],
+            user_id: int,
     ) -> list[TaskRead]:
+
         created_tasks = []
 
         for task_data in tasks_data:
             task = await self.create_task(
-                session,
-                task_data,
+                session=session,
+                task_data=task_data,
+                user_id=user_id,
             )
 
             created_tasks.append(task)
@@ -50,11 +71,16 @@ class TaskCrud:
     async def update_whole_task(
         self,
         session: AsyncSession,
+        user_id: int,
         task_id: int,
         task_data: TaskUpdateAll,
     ) -> TaskRead | None:
 
-        task = await session.get(Task, task_id)
+        task = await self._get_task_model(
+            session=session,
+            user_id=user_id,
+            task_id=task_id,
+        )
 
         if task is None:
             return None
@@ -67,11 +93,16 @@ class TaskCrud:
     async def update_task_partially(
         self,
         session: AsyncSession,
+        user_id: int,
         task_id: int,
         task_data: TaskUpdatePartial,
     ) -> TaskRead | None:
 
-        task = await session.get(Task, task_id)
+        task = await self._get_task_model(
+            session=session,
+            user_id=user_id,
+            task_id=task_id,
+        )
 
         if task is None:
             return None
@@ -84,10 +115,13 @@ class TaskCrud:
     async def get_all_tasks(
         self,
         session: AsyncSession,
+        user_id: int,
     ) -> list[TaskRead]:
 
-        stmt = select(Task)
-        result = await session.execute(stmt)
+        result = await session.execute(
+            select(Task).where(Task.user_id == user_id)
+        )
+
         tasks = result.scalars().all()
 
         return [
@@ -98,10 +132,15 @@ class TaskCrud:
     async def get_task_by_id(
         self,
         session: AsyncSession,
+        user_id: int,
         task_id: int,
     ) -> TaskRead | None:
 
-        task = await session.get(Task, task_id)
+        task = await self._get_task_model(
+            session=session,
+            user_id=user_id,
+            task_id=task_id,
+        )
 
         if task is None:
             return None
@@ -112,9 +151,14 @@ class TaskCrud:
         self,
         session: AsyncSession,
         task_id: int,
+        user_id: int,
     ) -> TaskRead | None:
 
-        task = await session.get(Task, task_id)
+        task = await self._get_task_model(
+            session=session,
+            user_id=user_id,
+            task_id=task_id,
+        )
 
         if task is None:
             return None
