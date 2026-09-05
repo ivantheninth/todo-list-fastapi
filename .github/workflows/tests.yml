@@ -29,7 +29,16 @@ jobs:
     env:
       OPENAI_API_KEY: test-key
       OPENAI_MODEL: gpt-5-nano
-      TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/todo_test_db
+
+      DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/todo_test_db
+      TEST_DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/todo_test_db
+      ALEMBIC_DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/todo_test_db
+
+      FRONTEND_ORIGIN: http://localhost:3000
+
+      JWT_SECRET_KEY: test-secret-key
+      JWT_ALGORITHM: HS256
+      JWT_ACCESS_TOKEN_EXPIRE_MINUTES: 30
 
     steps:
       - name: Checkout repository
@@ -38,7 +47,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.13"
 
       - name: Install dependencies
         working-directory: backend
