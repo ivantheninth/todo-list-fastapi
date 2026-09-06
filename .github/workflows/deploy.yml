@@ -71,9 +71,13 @@ jobs:
             git fetch origin
             git reset --hard origin/main
 
-            docker-compose pull
+                        docker-compose pull
 
             docker-compose down
+
+            docker-compose up -d postgres
+
+            docker-compose run --rm backend alembic upgrade head
 
             docker-compose up -d --remove-orphans
 
