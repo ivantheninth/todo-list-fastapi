@@ -5,7 +5,7 @@ on:
   pull_request:
 
 jobs:
-  tests:
+  backend:
     runs-on: ubuntu-latest
 
     services:
@@ -67,3 +67,29 @@ jobs:
         working-directory: backend
         run: |
           bandit -r app
+
+  frontend:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Run lint
+        working-directory: frontend
+        run: npm run lint
+
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build

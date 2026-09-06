@@ -534,3 +534,53 @@ async def test_user_sees_only_own_tasks(
 
     assert response.status_code == 200
     assert response.json() == []
+
+async def test_create_task_with_empty_title(
+    authorized_client,
+):
+    response = await authorized_client.post(
+        "/tasks",
+        json={
+            "title": "   ",
+            "note": "Test note",
+        },
+    )
+
+    assert response.status_code == 422
+
+
+async def test_create_task_with_too_long_title(
+    authorized_client,
+):
+    response = await authorized_client.post(
+        "/tasks",
+        json={
+            "title": "a" * 201,
+            "note": "Test note",
+        },
+    )
+
+    assert response.status_code == 422
+
+
+async def test_patch_completed_cannot_be_null(
+    authorized_client,
+):
+    create_response = await authorized_client.post(
+        "/tasks",
+        json={
+            "title": "Test task",
+            "note": "Test note",
+        },
+    )
+
+    task_id = create_response.json()["id"]
+
+    response = await authorized_client.patch(
+        f"/tasks/{task_id}",
+        json={
+            "completed": None,
+        },
+    )
+
+    assert response.status_code == 422

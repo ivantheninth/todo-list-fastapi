@@ -18,9 +18,7 @@ function NotFoundComponent() {
       <div className="max-w-md text-center">
         <h1 className="text-7xl font-bold text-foreground">404</h1>
 
-        <h2 className="mt-4 text-xl font-semibold text-foreground">
-          Page not found
-        </h2>
+        <h2 className="mt-4 text-xl font-semibold text-foreground">Page not found</h2>
 
         <p className="mt-2 text-sm text-muted-foreground">
           The page you're looking for doesn't exist or has been moved.
@@ -39,13 +37,7 @@ function NotFoundComponent() {
   );
 }
 
-function ErrorComponent({
-  error,
-  reset,
-}: {
-  error: Error;
-  reset: () => void;
-}) {
+function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
 
   const router = useRouter();
@@ -64,8 +56,7 @@ function ErrorComponent({
         </h1>
 
         <p className="mt-2 text-sm text-muted-foreground">
-          Something went wrong. Try refreshing the page or return to the home
-          page.
+          Something went wrong. Try refreshing the page or return to the home page.
         </p>
 
         <div className="mt-6 flex flex-wrap justify-center gap-2">
@@ -108,8 +99,7 @@ export const Route = createRootRouteWithContext<{
       },
       {
         name: "description",
-        content:
-          "TskList — your everyday helper for managing tasks, notes, and daily work.",
+        content: "TskList — your everyday helper for managing tasks, notes, and daily work.",
       },
       {
         property: "og:title",
@@ -117,8 +107,7 @@ export const Route = createRootRouteWithContext<{
       },
       {
         property: "og:description",
-        content:
-          "TskList — your everyday helper for managing tasks, notes, and daily work.",
+        content: "TskList — your everyday helper for managing tasks, notes, and daily work.",
       },
       {
         property: "og:type",

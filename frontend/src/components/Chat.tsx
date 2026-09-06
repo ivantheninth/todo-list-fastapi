@@ -1,10 +1,4 @@
-import {
-  useEffect,
-  useRef,
-  useState,
-  type KeyboardEvent,
-} from "react";
-
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 
 type Message = {
   id: string;
@@ -12,31 +6,33 @@ type Message = {
   text: string;
 };
 
-
 type AITask = {
   title: string;
   note?: string | null;
 };
-
 
 type ChatApiResponse = {
   answer: string;
   tasks: AITask[];
 };
 
-
 type ChatProps = {
   onTasksCreated?: () => void;
 };
-
 
 function generateId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
-export default function Chat({
-  onTasksCreated,
-}: ChatProps) {
+function getAccessToken() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  return localStorage.getItem("access_token");
+}
+
+export default function Chat({ onTasksCreated }: ChatProps) {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "welcome",
@@ -53,7 +49,6 @@ export default function Chat({
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-
   useEffect(() => {
     const element = scrollRef.current;
 
@@ -62,93 +57,99 @@ export default function Chat({
     }
   }, [messages, isSending, suggestedTasks]);
 
-
   async function sendMessage() {
-  console.log("=== sendMessage called ===");
+    const text = input.trim();
 
-  const text = input.trim();
-  console.log("Input:", text);
-
-  if (!text || isSending) {
-    console.log("Request cancelled");
-    return;
-  }
-
-  const userMessage: Message = {
-    id: generateId(),
-    role: "user",
-    text,
-  };
-
-  setMessages((previous) => [
-    ...previous,
-    userMessage,
-  ]);
-
-  setInput("");
-  setSuggestedTasks([]);
-  setIsSending(true);
-
-  try {
-    console.log("Before fetch");
-
-    const response = await fetch("/chat", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        message: text,
-      }),
-    });
-
-    console.log("After fetch");
-    console.log("Status:", response.status);
-
-    if (!response.ok) {
-      throw new Error(
-        `Request failed: ${response.status}`
-      );
+    if (!text || isSending) {
+      return;
     }
 
-    const data =
-      (await response.json()) as ChatApiResponse;
+    const token = getAccessToken();
 
-    console.log("Response:", data);
+    if (!token) {
+      setMessages((previous) => [
+        ...previous,
+        {
+          id: generateId(),
+          role: "assistant",
+          text: "Please log in to use the AI assistant.",
+        },
+      ]);
 
-    setMessages((previous) => [
-      ...previous,
-      {
-        id: generateId(),
-        role: "assistant",
-        text: data.answer,
-      },
-    ]);
+      return;
+    }
 
-    setSuggestedTasks(data.tasks ?? []);
-  } catch (error) {
-    console.error("Chat error:", error);
+    const userMessage: Message = {
+      id: generateId(),
+      role: "user",
+      text,
+    };
 
-    setMessages((previous) => [
-      ...previous,
-      {
-        id: generateId(),
-        role: "assistant",
-        text: "Sorry, something went wrong.",
-      },
-    ]);
-  } finally {
-    console.log("Finished");
-    setIsSending(false);
+    setMessages((previous) => [...previous, userMessage]);
+
+    setInput("");
+    setSuggestedTasks([]);
+    setIsSending(true);
+
+    try {
+      const response = await fetch("/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          message: text,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Request failed: ${response.status}`);
+      }
+
+      const data = (await response.json()) as ChatApiResponse;
+
+      setMessages((previous) => [
+        ...previous,
+        {
+          id: generateId(),
+          role: "assistant",
+          text: data.answer,
+        },
+      ]);
+
+      setSuggestedTasks(data.tasks ?? []);
+    } catch {
+      setMessages((previous) => [
+        ...previous,
+        {
+          id: generateId(),
+          role: "assistant",
+          text: "Sorry, something went wrong.",
+        },
+      ]);
+    } finally {
+      setIsSending(false);
+    }
   }
-}
-
 
   async function createSuggestedTasks() {
-    if (
-      suggestedTasks.length === 0 ||
-      isCreating
-    ) {
+    if (suggestedTasks.length === 0 || isCreating) {
+      return;
+    }
+
+    const token = getAccessToken();
+
+    if (!token) {
+      setMessages((previous) => [
+        ...previous,
+        {
+          id: generateId(),
+          role: "assistant",
+          text: "Please log in to create tasks.",
+        },
+      ]);
+
       return;
     }
 
@@ -159,6 +160,7 @@ export default function Chat({
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           tasks: suggestedTasks.map((task) => ({
@@ -170,9 +172,7 @@ export default function Chat({
       });
 
       if (!response.ok) {
-        throw new Error(
-          `Task creation failed: ${response.status}`
-        );
+        throw new Error(`Task creation failed: ${response.status}`);
       }
 
       setMessages((previous) => [
@@ -187,9 +187,7 @@ export default function Chat({
       setSuggestedTasks([]);
 
       onTasksCreated?.();
-    } catch (error) {
-      console.error(error);
-
+    } catch {
       setMessages((previous) => [
         ...previous,
         {
@@ -203,83 +201,42 @@ export default function Chat({
     }
   }
 
-
-  function onKeyDown(
-    event: KeyboardEvent<HTMLTextAreaElement>,
-  ) {
-    if (
-      event.key === "Enter" &&
-      !event.shiftKey
-    ) {
+  function onKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
       sendMessage();
     }
   }
 
-
   return (
     <div className="flex min-h-[600px] flex-col bg-background text-foreground">
-
       <header className="border-b border-border px-4 py-3">
-        <h2 className="font-semibold">
-          AI Assistant
-        </h2>
+        <h2 className="font-semibold">AI Assistant</h2>
 
-        <p className="text-xs text-muted-foreground">
-          Ask anything or generate Todo tasks
-        </p>
+        <p className="text-xs text-muted-foreground">Ask anything or generate Todo tasks</p>
       </header>
 
-
-      <div
-        ref={scrollRef}
-        className="flex-1 overflow-y-auto px-4 py-6"
-      >
+      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-6">
         <div className="mx-auto flex max-w-2xl flex-col gap-4">
-
           {messages.map((message) => (
-            <MessageBubble
-              key={message.id}
-              message={message}
-            />
+            <MessageBubble key={message.id} message={message} />
           ))}
 
-
-          {isSending && (
-            <ThinkingBubble />
-          )}
-
+          {isSending && <ThinkingBubble />}
 
           {suggestedTasks.length > 0 && (
             <div className="rounded-2xl border border-border bg-card p-4">
-
-              <h3 className="font-medium">
-                Suggested tasks
-              </h3>
+              <h3 className="font-medium">Suggested tasks</h3>
 
               <div className="mt-3 space-y-2">
+                {suggestedTasks.map((task, index) => (
+                  <div key={`${task.title}-${index}`} className="rounded-xl bg-muted p-3">
+                    <p className="font-medium">{task.title}</p>
 
-                {suggestedTasks.map(
-                  (task, index) => (
-                    <div
-                      key={`${task.title}-${index}`}
-                      className="rounded-xl bg-muted p-3"
-                    >
-                      <p className="font-medium">
-                        {task.title}
-                      </p>
-
-                      {task.note && (
-                        <p className="mt-1 text-sm text-muted-foreground">
-                          {task.note}
-                        </p>
-                      )}
-                    </div>
-                  ),
-                )}
-
+                    {task.note && <p className="mt-1 text-sm text-muted-foreground">{task.note}</p>}
+                  </div>
+                ))}
               </div>
-
 
               <button
                 type="button"
@@ -287,28 +244,19 @@ export default function Chat({
                 disabled={isCreating}
                 className="mt-4 w-full rounded-xl bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground disabled:opacity-50"
               >
-                {isCreating
-                  ? "Creating..."
-                  : `Create ${suggestedTasks.length} tasks`}
+                {isCreating ? "Creating..." : `Create ${suggestedTasks.length} tasks`}
               </button>
-
             </div>
           )}
-
         </div>
       </div>
 
-
       <div className="border-t border-border p-4">
-
         <div className="flex gap-2">
-
           <textarea
             ref={textareaRef}
             value={input}
-            onChange={(event) =>
-              setInput(event.target.value)
-            }
+            onChange={(event) => setInput(event.target.value)}
             onKeyDown={onKeyDown}
             rows={1}
             placeholder="Ask AI..."
@@ -318,44 +266,25 @@ export default function Chat({
           <button
             type="button"
             onClick={sendMessage}
-            disabled={
-              isSending ||
-              input.trim().length === 0
-            }
+            disabled={isSending || input.trim().length === 0}
             className="rounded-xl bg-primary px-4 py-2 text-primary-foreground disabled:opacity-50"
           >
             Send
           </button>
-
         </div>
-
       </div>
     </div>
   );
 }
 
-
-function MessageBubble({
-  message,
-}: {
-  message: Message;
-}) {
-  const isUser =
-    message.role === "user";
+function MessageBubble({ message }: { message: Message }) {
+  const isUser = message.role === "user";
 
   return (
-    <div
-      className={`flex ${
-        isUser
-          ? "justify-end"
-          : "justify-start"
-      }`}
-    >
+    <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
       <div
         className={`max-w-[80%] rounded-2xl px-4 py-2 text-sm ${
-          isUser
-            ? "bg-primary text-primary-foreground"
-            : "bg-muted"
+          isUser ? "bg-primary text-primary-foreground" : "bg-muted"
         }`}
       >
         {message.text}
@@ -364,11 +293,6 @@ function MessageBubble({
   );
 }
 
-
 function ThinkingBubble() {
-  return (
-    <div className="text-sm text-muted-foreground">
-      Thinking...
-    </div>
-  );
+  return <div className="text-sm text-muted-foreground">Thinking...</div>;
 }

@@ -1,4 +1,3 @@
-import pytest
 from openai import OpenAIError
 
 from app.services.llm import llm_service
