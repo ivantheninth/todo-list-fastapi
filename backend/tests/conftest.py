@@ -68,6 +68,7 @@ async def auth_headers(client):
     await client.post(
         "/auth/register",
         json={
+            "username": "testuser",
             "email": "test@example.com",
             "password": "testpassword123",
         },
@@ -84,9 +85,8 @@ async def auth_headers(client):
     token = response.json()["access_token"]
 
     return {
-        "Authorization": f"Bearer {token}"
+        "Authorization": f"Bearer {token}",
     }
-
 
 @pytest_asyncio.fixture
 async def authorized_client(client, auth_headers):

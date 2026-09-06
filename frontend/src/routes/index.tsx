@@ -23,6 +23,13 @@ type TokenResponse = {
 };
 
 
+type User = {
+  id: number;
+  username: string;
+  email: string;
+};
+
+
 const API_URL = "/tasks";
 
 
@@ -33,19 +40,31 @@ function Index() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [editingId, setEditingId] = useState<Task["id"] | null>(null);
+  const [editingId, setEditingId] =
+    useState<Task["id"] | null>(null);
+
   const [editTitle, setEditTitle] = useState("");
   const [editNote, setEditNote] = useState("");
 
   const [search, setSearch] = useState("");
+
   const [filter, setFilter] = useState<
     "all" | "active" | "completed"
   >("all");
 
   const [showChat, setShowChat] = useState(false);
 
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [repeatPassword, setRepeatPassword] = useState("");
+
+  const [showPassword, setShowPassword] = useState(false);
+  const [showRepeatPassword, setShowRepeatPassword] =
+    useState(false);
+
+  const [currentUser, setCurrentUser] =
+    useState<User | null>(null);
 
   const [authMode, setAuthMode] = useState<
     "login" | "register"
@@ -60,6 +79,29 @@ function Index() {
 
     return localStorage.getItem("access_token");
   });
+
+
+  async function loadCurrentUser(
+    accessToken: string,
+  ) {
+    const res = await fetch("/auth/me", {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    if (res.status === 401 || res.status === 403) {
+      throw new Error("Your session has expired.");
+    }
+
+    if (!res.ok) {
+      throw new Error("Failed to load user");
+    }
+
+    const user: User = await res.json();
+
+    setCurrentUser(user);
+  }
 
 
   async function performLogin() {
@@ -85,8 +127,11 @@ function Index() {
       data.access_token,
     );
 
+    await loadCurrentUser(data.access_token);
+
     setToken(data.access_token);
     setPassword("");
+    setRepeatPassword("");
   }
 
 
@@ -114,6 +159,17 @@ function Index() {
     e.preventDefault();
 
     setError(null);
+
+    if (!username.trim()) {
+      setError("Username is required");
+      return;
+    }
+
+    if (password !== repeatPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+
     setAuthLoading(true);
 
     try {
@@ -123,6 +179,7 @@ function Index() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
+          username: username.trim(),
           email,
           password,
         }),
@@ -137,6 +194,8 @@ function Index() {
       }
 
       await performLogin();
+
+      setUsername("");
     } catch (e) {
       setError(
         e instanceof Error
@@ -154,7 +213,13 @@ function Index() {
   ) {
     setAuthMode(mode);
     setError(null);
+
+    setUsername("");
     setPassword("");
+    setRepeatPassword("");
+
+    setShowPassword(false);
+    setShowRepeatPassword(false);
   }
 
 
@@ -162,9 +227,17 @@ function Index() {
     localStorage.removeItem("access_token");
 
     setToken(null);
+    setCurrentUser(null);
     setTasks([]);
+
+    setUsername("");
     setEmail("");
     setPassword("");
+    setRepeatPassword("");
+
+    setShowPassword(false);
+    setShowRepeatPassword(false);
+
     setError(null);
     setShowChat(false);
     setAuthMode("login");
@@ -214,9 +287,22 @@ function Index() {
 
 
   useEffect(() => {
-    if (token) {
-      loadTasks();
+    if (!token) {
+      return;
     }
+
+    async function initializeUser() {
+      try {
+        await loadCurrentUser(token);
+      } catch {
+        logout();
+        return;
+      }
+
+      await loadTasks();
+    }
+
+    initializeUser();
   }, [token]);
 
 
@@ -467,6 +553,20 @@ function Index() {
             className="mt-3 flex flex-col gap-3 rounded-2xl border border-border bg-card p-5 shadow-[var(--shadow-warm)]"
           >
 
+            {authMode === "register" && (
+              <input
+                type="text"
+                value={username}
+                onChange={(e) =>
+                  setUsername(e.target.value)
+                }
+                placeholder="Username"
+                autoComplete="username"
+                required
+                className="rounded-lg border border-border bg-background px-4 py-3 outline-none placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring/30"
+              />
+            )}
+
             <input
               type="email"
               value={email}
@@ -479,21 +579,98 @@ function Index() {
               className="rounded-lg border border-border bg-background px-4 py-3 outline-none placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring/30"
             />
 
-            <input
-              type="password"
-              value={password}
-              onChange={(e) =>
-                setPassword(e.target.value)
-              }
-              placeholder="Password"
-              autoComplete={
-                authMode === "login"
-                  ? "current-password"
-                  : "new-password"
-              }
-              required
-              className="rounded-lg border border-border bg-background px-4 py-3 outline-none placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring/30"
-            />
+
+            <div className="relative">
+
+              <input
+                type={
+                  showPassword
+                    ? "text"
+                    : "password"
+                }
+                value={password}
+                onChange={(e) =>
+                  setPassword(e.target.value)
+                }
+                placeholder="Password"
+                autoComplete={
+                  authMode === "login"
+                    ? "current-password"
+                    : "new-password"
+                }
+                required
+                className="w-full rounded-lg border border-border bg-background px-4 py-3 pr-12 outline-none placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring/30"
+              />
+
+              <button
+                type="button"
+                onClick={() =>
+                  setShowPassword(
+                    (previous) => !previous,
+                  )
+                }
+                aria-label={
+                  showPassword
+                    ? "Hide password"
+                    : "Show password"
+                }
+                className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-muted-foreground transition-colors hover:text-foreground"
+              >
+                {showPassword ? (
+                  <EyeOffIcon />
+                ) : (
+                  <EyeIcon />
+                )}
+              </button>
+
+            </div>
+
+
+            {authMode === "register" && (
+              <div className="relative">
+
+                <input
+                  type={
+                    showRepeatPassword
+                      ? "text"
+                      : "password"
+                  }
+                  value={repeatPassword}
+                  onChange={(e) =>
+                    setRepeatPassword(
+                      e.target.value,
+                    )
+                  }
+                  placeholder="Repeat password"
+                  autoComplete="new-password"
+                  required
+                  className="w-full rounded-lg border border-border bg-background px-4 py-3 pr-12 outline-none placeholder:text-muted-foreground focus:border-ring focus:ring-2 focus:ring-ring/30"
+                />
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setShowRepeatPassword(
+                      (previous) => !previous,
+                    )
+                  }
+                  aria-label={
+                    showRepeatPassword
+                      ? "Hide password"
+                      : "Show password"
+                  }
+                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  {showRepeatPassword ? (
+                    <EyeOffIcon />
+                  ) : (
+                    <EyeIcon />
+                  )}
+                </button>
+
+              </div>
+            )}
+
 
             <button
               type="submit"
@@ -539,21 +716,40 @@ function Index() {
               </h1>
             </div>
 
-            <button
-              type="button"
-              onClick={logout}
-              className="rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-            >
-              Logout
-            </button>
+
+            <div className="flex flex-col items-end gap-2">
+
+              {currentUser && (
+                <div className="text-right">
+                  <p className="text-sm font-medium">
+                    {currentUser.username}
+                  </p>
+
+                  <p className="text-xs text-muted-foreground">
+                    {currentUser.email}
+                  </p>
+                </div>
+              )}
+
+              <button
+                type="button"
+                onClick={logout}
+                className="rounded-lg border border-border px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              >
+                Logout
+              </button>
+
+            </div>
 
           </div>
+
 
           <p className="mt-2 text-muted-foreground">
             {tasks.length === 0
               ? "Nothing here yet — add your first task below."
               : `${remaining} of ${tasks.length} still to do.`}
           </p>
+
 
           <button
             type="button"
@@ -837,5 +1033,49 @@ function Index() {
 
       </div>
     </div>
+  );
+}
+
+
+function EyeIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  );
+}
+
+
+function EyeOffIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="m2 2 20 20" />
+      <path d="M6.71 6.71C4.99 7.9 3.61 9.6 2.94 11.65a1 1 0 0 0 0 .7C4.42 16.87 7.92 19 12 19c1.49 0 2.88-.28 4.12-.8" />
+      <path d="M10.73 5.08A9.8 9.8 0 0 1 12 5c4.08 0 7.58 2.13 9.06 6.65a1 1 0 0 1 0 .7 11 11 0 0 1-1.55 3.02" />
+      <path d="M14.12 14.12A3 3 0 0 1 9.88 9.88" />
+    </svg>
   );
 }

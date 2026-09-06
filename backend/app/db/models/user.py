@@ -17,6 +17,11 @@ class User(Base):
         primary_key=True,
     )
 
+    username: Mapped[str] = mapped_column(
+        String,
+        nullable=False,
+    )
+
     email: Mapped[str] = mapped_column(
         String,
         unique=True,
@@ -28,4 +33,6 @@ class User(Base):
         nullable=False,
     )
 
-    tasks: Mapped[list["Task"]] = relationship(back_populates="user")
+    tasks: Mapped[list["Task"]] = relationship(
+        back_populates="user",
+    )

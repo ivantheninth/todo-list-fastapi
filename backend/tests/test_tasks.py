@@ -1,5 +1,4 @@
 async def test_create_task(authorized_client):
-
     payload = {
         "title": "Learn pytest",
         "note": "Write tests",
@@ -19,22 +18,25 @@ async def test_create_task(authorized_client):
     assert data["completed"] is False
     assert isinstance(data["id"], int)
 
-async def test_create_tasks_bulk(authorized_client):
 
+async def test_create_tasks_bulk(authorized_client):
     payload = {
         "tasks": [
             {
                 "title": "First bulk task",
-                "note": "First note"
+                "note": "First note",
             },
             {
                 "title": "Second bulk task",
-                "note": "Second note"
-            }
+                "note": "Second note",
+            },
         ]
     }
 
-    response = await authorized_client.post("/tasks/bulk", json=payload)
+    response = await authorized_client.post(
+        "/tasks/bulk",
+        json=payload,
+    )
 
     assert response.status_code == 201
 
@@ -60,7 +62,9 @@ async def test_get_task_by_id(authorized_client):
 
     task_id = create_response.json()["id"]
 
-    response = await authorized_client.get(f"/tasks/{task_id}")
+    response = await authorized_client.get(
+        f"/tasks/{task_id}"
+    )
 
     assert response.status_code == 200
 
@@ -100,8 +104,11 @@ async def test_get_all_tasks(authorized_client):
     assert data[0]["title"] == "First task"
     assert data[1]["title"] == "Second task"
 
+
 async def test_get_nonexistent_task(authorized_client):
-    response = await authorized_client.get("/tasks/999999")
+    response = await authorized_client.get(
+        "/tasks/999999"
+    )
 
     assert response.status_code == 404
     assert response.json() == {
@@ -185,7 +192,9 @@ async def test_update_task_partially(authorized_client):
     assert data["completed"] is False
 
 
-async def test_update_task_completed_partially(authorized_client):
+async def test_update_task_completed_partially(
+    authorized_client,
+):
     create_response = await authorized_client.post(
         "/tasks",
         json={
@@ -213,7 +222,9 @@ async def test_update_task_completed_partially(authorized_client):
     assert data["completed"] is True
 
 
-async def test_update_partially_nonexistent_task(authorized_client):
+async def test_update_partially_nonexistent_task(
+    authorized_client,
+):
     response = await authorized_client.patch(
         "/tasks/999999",
         json={
@@ -239,12 +250,16 @@ async def test_delete_task(authorized_client):
     created_task = create_response.json()
     task_id = created_task["id"]
 
-    response = await authorized_client.delete(f"/tasks/{task_id}")
+    response = await authorized_client.delete(
+        f"/tasks/{task_id}"
+    )
 
     assert response.status_code == 200
     assert response.json() == created_task
 
-    get_response = await authorized_client.get(f"/tasks/{task_id}")
+    get_response = await authorized_client.get(
+        f"/tasks/{task_id}"
+    )
 
     assert get_response.status_code == 404
     assert get_response.json() == {
@@ -253,7 +268,9 @@ async def test_delete_task(authorized_client):
 
 
 async def test_delete_nonexistent_task(authorized_client):
-    response = await authorized_client.delete("/tasks/999999")
+    response = await authorized_client.delete(
+        "/tasks/999999"
+    )
 
     assert response.status_code == 404
     assert response.json() == {
@@ -273,7 +290,9 @@ async def test_create_task_without_title(authorized_client):
 
 
 async def test_invalid_task_id(authorized_client):
-    response = await authorized_client.get("/tasks/not-a-number")
+    response = await authorized_client.get(
+        "/tasks/not-a-number"
+    )
 
     assert response.status_code == 422
 
@@ -286,16 +305,20 @@ async def test_root(client):
         "message": "App is running",
     }
 
+
 async def test_health(client):
     response = await client.get("/health")
 
     assert response.status_code == 200
-    assert response.json() == {"status": "ok"}
+    assert response.json() == {
+        "status": "ok",
+    }
+
 
 async def test_user_cannot_get_another_users_task(
     authorized_client,
 ):
-    # User 1 created task
+    # User 1 creates a task
     create_response = await authorized_client.post(
         "/tasks",
         json={
@@ -306,16 +329,17 @@ async def test_user_cannot_get_another_users_task(
 
     task_id = create_response.json()["id"]
 
-    # Creating User 2
+    # Create User 2
     await authorized_client.post(
         "/auth/register",
         json={
+            "username": "seconduser",
             "email": "second@example.com",
             "password": "testpassword123",
         },
     )
 
-    #  Log in with User 2
+    # Log in as User 2
     login_response = await authorized_client.post(
         "/auth/login",
         json={
@@ -326,15 +350,16 @@ async def test_user_cannot_get_another_users_task(
 
     second_token = login_response.json()["access_token"]
 
-    # User 2 is trying to get task of the User 1
+    # User 2 tries to get User 1's task
     response = await authorized_client.get(
         f"/tasks/{task_id}",
         headers={
-            "Authorization": f"Bearer {second_token}"
+            "Authorization": f"Bearer {second_token}",
         },
     )
 
     assert response.status_code == 404
+
 
 async def test_user_cannot_delete_another_users_task(
     authorized_client,
@@ -352,6 +377,7 @@ async def test_user_cannot_delete_another_users_task(
     await authorized_client.post(
         "/auth/register",
         json={
+            "username": "seconduser",
             "email": "second@example.com",
             "password": "testpassword123",
         },
@@ -370,11 +396,12 @@ async def test_user_cannot_delete_another_users_task(
     response = await authorized_client.delete(
         f"/tasks/{task_id}",
         headers={
-            "Authorization": f"Bearer {second_token}"
+            "Authorization": f"Bearer {second_token}",
         },
     )
 
     assert response.status_code == 404
+
 
 async def test_user_cannot_update_another_users_task(
     authorized_client,
@@ -392,6 +419,7 @@ async def test_user_cannot_update_another_users_task(
     await authorized_client.post(
         "/auth/register",
         json={
+            "username": "seconduser",
             "email": "second@example.com",
             "password": "testpassword123",
         },
@@ -410,7 +438,7 @@ async def test_user_cannot_update_another_users_task(
     response = await authorized_client.put(
         f"/tasks/{task_id}",
         headers={
-            "Authorization": f"Bearer {second_token}"
+            "Authorization": f"Bearer {second_token}",
         },
         json={
             "title": "Hacked title",
@@ -420,6 +448,7 @@ async def test_user_cannot_update_another_users_task(
     )
 
     assert response.status_code == 404
+
 
 async def test_user_cannot_patch_another_users_task(
     authorized_client,
@@ -437,6 +466,7 @@ async def test_user_cannot_patch_another_users_task(
     await authorized_client.post(
         "/auth/register",
         json={
+            "username": "seconduser",
             "email": "second@example.com",
             "password": "testpassword123",
         },
@@ -455,7 +485,7 @@ async def test_user_cannot_patch_another_users_task(
     response = await authorized_client.patch(
         f"/tasks/{task_id}",
         headers={
-            "Authorization": f"Bearer {second_token}"
+            "Authorization": f"Bearer {second_token}",
         },
         json={
             "title": "Hacked title",
@@ -463,6 +493,7 @@ async def test_user_cannot_patch_another_users_task(
     )
 
     assert response.status_code == 404
+
 
 async def test_user_sees_only_own_tasks(
     authorized_client,
@@ -478,6 +509,7 @@ async def test_user_sees_only_own_tasks(
     await authorized_client.post(
         "/auth/register",
         json={
+            "username": "seconduser",
             "email": "second@example.com",
             "password": "testpassword123",
         },
@@ -496,7 +528,7 @@ async def test_user_sees_only_own_tasks(
     response = await authorized_client.get(
         "/tasks",
         headers={
-            "Authorization": f"Bearer {second_token}"
+            "Authorization": f"Bearer {second_token}",
         },
     )
 
