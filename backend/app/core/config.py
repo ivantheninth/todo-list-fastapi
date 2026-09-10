@@ -10,6 +10,8 @@ class Settings(BaseSettings):
 
     FRONTEND_ORIGIN: str
 
+    LOG_LEVEL: str = "INFO"
+
     ALEMBIC_DATABASE_URL: str
 
     JWT_SECRET_KEY: str

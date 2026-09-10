@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -6,13 +8,15 @@ from app.crud.task import task_crud
 from app.db.database import get_db
 from app.db.models.user import User
 from app.schemas.task import (
+    BulkTaskCreate,
     TaskCreate,
     TaskRead,
-    BulkTaskCreate,
     TaskUpdateAll,
     TaskUpdatePartial,
 )
 
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/tasks", tags=["tasks"])
 
@@ -24,7 +28,7 @@ async def read_all_tasks(
 ):
     return await task_crud.get_all_tasks(
         session=db,
-        user_id=current_user.id
+        user_id=current_user.id,
     )
 
 
@@ -49,7 +53,11 @@ async def read_task(
     return task
 
 
-@router.post("", response_model=TaskRead, status_code=201)
+@router.post(
+    "",
+    response_model=TaskRead,
+    status_code=201,
+)
 async def create_task_endpoint(
     task_data: TaskCreate,
     db: AsyncSession = Depends(get_db),
@@ -67,10 +75,20 @@ async def create_task_endpoint(
 
     except Exception:
         await db.rollback()
+
+        logger.exception(
+            "Failed to create task user_id=%s",
+            current_user.id,
+        )
+
         raise
 
 
-@router.post("/bulk", response_model=list[TaskRead], status_code=201)
+@router.post(
+    "/bulk",
+    response_model=list[TaskRead],
+    status_code=201,
+)
 async def create_tasks_bulk_endpoint(
     bulk_data: BulkTaskCreate,
     db: AsyncSession = Depends(get_db),
@@ -88,89 +106,137 @@ async def create_tasks_bulk_endpoint(
 
     except Exception:
         await db.rollback()
+
+        logger.exception(
+            "Failed to create tasks in bulk user_id=%s",
+            current_user.id,
+        )
+
         raise
 
 
-@router.put("/{task_id}", response_model=TaskRead)
+@router.put(
+    "/{task_id}",
+    response_model=TaskRead,
+)
 async def update_whole_task_endpoint(
     task_id: int,
     task_data: TaskUpdateAll,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    task = await task_crud.update_whole_task(
-        session=db,
-        task_id=task_id,
-        user_id=current_user.id,
-        task_data=task_data,
-    )
-
-    if task is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Task not found",
+    try:
+        task = await task_crud.update_whole_task(
+            session=db,
+            task_id=task_id,
+            user_id=current_user.id,
+            task_data=task_data,
         )
 
-    try:
+        if task is None:
+            raise HTTPException(
+                status_code=404,
+                detail="Task not found",
+            )
+
         await db.commit()
-    except Exception:
-        await db.rollback()
+        return task
+
+    except HTTPException:
         raise
 
-    return task
+    except Exception:
+        await db.rollback()
+
+        logger.exception(
+            "Failed to update task "
+            "task_id=%s user_id=%s",
+            task_id,
+            current_user.id,
+        )
+
+        raise
 
 
-@router.patch("/{task_id}", response_model=TaskRead)
+@router.patch(
+    "/{task_id}",
+    response_model=TaskRead,
+)
 async def update_task_partially_endpoint(
     task_id: int,
     task_data: TaskUpdatePartial,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    task = await task_crud.update_task_partially(
-        session=db,
-        task_id=task_id,
-        user_id=current_user.id,
-        task_data=task_data,
-    )
-
-    if task is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Task not found",
+    try:
+        task = await task_crud.update_task_partially(
+            session=db,
+            task_id=task_id,
+            user_id=current_user.id,
+            task_data=task_data,
         )
 
-    try:
+        if task is None:
+            raise HTTPException(
+                status_code=404,
+                detail="Task not found",
+            )
+
         await db.commit()
-    except Exception:
-        await db.rollback()
+        return task
+
+    except HTTPException:
         raise
 
-    return task
+    except Exception:
+        await db.rollback()
+
+        logger.exception(
+            "Failed to partially update task "
+            "task_id=%s user_id=%s",
+            task_id,
+            current_user.id,
+        )
+
+        raise
 
 
-@router.delete("/{task_id}", response_model=TaskRead)
+@router.delete(
+    "/{task_id}",
+    response_model=TaskRead,
+)
 async def delete_task(
     task_id: int,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    task = await task_crud.delete_task(
-        session=db,
-        task_id=task_id,
-        user_id=current_user.id
-    )
-
-    if task is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Task not found",
+    try:
+        task = await task_crud.delete_task(
+            session=db,
+            task_id=task_id,
+            user_id=current_user.id,
         )
 
-    try:
+        if task is None:
+            raise HTTPException(
+                status_code=404,
+                detail="Task not found",
+            )
+
         await db.commit()
-    except Exception:
-        await db.rollback()
+        return task
+
+    except HTTPException:
         raise
 
-    return task
+    except Exception:
+        await db.rollback()
+
+        logger.exception(
+            "Failed to delete task "
+            "task_id=%s user_id=%s",
+            task_id,
+            current_user.id,
+        )
+
+        raise
