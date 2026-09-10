@@ -7,6 +7,8 @@ class Settings(BaseSettings):
 
     OPENAI_API_KEY: str
     OPENAI_MODEL: str
+    OPENAI_TIMEOUT_SECONDS: float = 30.0
+    OPENAI_MAX_OUTPUT_TOKENS: int = 1000
 
     FRONTEND_ORIGIN: str
 
