@@ -2,6 +2,8 @@ from openai import OpenAIError
 
 from app.services.llm import llm_service
 
+from types import SimpleNamespace
+
 
 async def test_llm_success(monkeypatch):
     class FakeResponse:
@@ -17,6 +19,15 @@ async def test_llm_success(monkeypatch):
         }
         """
 
+        usage = SimpleNamespace(
+            input_tokens=100,
+            output_tokens=50,
+            total_tokens=150,
+            output_tokens_details=SimpleNamespace(
+                reasoning_tokens=10,
+            ),
+        )
+
     async def fake_create(*args, **kwargs):
         return FakeResponse()
 
@@ -26,7 +37,10 @@ async def test_llm_success(monkeypatch):
         fake_create,
     )
 
-    result = await llm_service.ask("Make me a study plan")
+    result = await llm_service.ask(
+        "Make me a study plan",
+        request_id="test-request-id",
+    )
 
     assert result.answer == "Here is your plan"
     assert len(result.tasks) == 1
@@ -39,6 +53,15 @@ import pytest
 async def test_llm_invalid_json(monkeypatch):
     class FakeResponse:
         output_text = "This is not JSON"
+
+        usage = SimpleNamespace(
+            input_tokens=100,
+            output_tokens=50,
+            total_tokens=150,
+            output_tokens_details=SimpleNamespace(
+                reasoning_tokens=10,
+            ),
+        )
 
     async def fake_create(*args, **kwargs):
         return FakeResponse()
@@ -53,7 +76,10 @@ async def test_llm_invalid_json(monkeypatch):
         RuntimeError,
         match="LLM returned invalid JSON",
     ):
-        await llm_service.ask("Make me a study plan")
+        await llm_service.ask(
+            "Make me a study plan",
+            request_id="test-request-id",
+        )
 
 async def test_llm_invalid_response_structure(monkeypatch):
     class FakeResponse:
@@ -62,6 +88,15 @@ async def test_llm_invalid_response_structure(monkeypatch):
             "wrong_field": "something"
         }
         """
+
+        usage = SimpleNamespace(
+            input_tokens=100,
+            output_tokens=50,
+            total_tokens=150,
+            output_tokens_details=SimpleNamespace(
+                reasoning_tokens=10,
+            ),
+        )
 
     async def fake_create(*args, **kwargs):
         return FakeResponse()
@@ -76,7 +111,10 @@ async def test_llm_invalid_response_structure(monkeypatch):
         RuntimeError,
         match="LLM returned invalid response structure",
     ):
-        await llm_service.ask("Make me a study plan")
+        await llm_service.ask(
+            "Make me a study plan",
+            request_id="test-request-id",
+        )
 
 async def test_llm_openai_error(monkeypatch):
     async def fake_create(*args, **kwargs):
@@ -92,4 +130,7 @@ async def test_llm_openai_error(monkeypatch):
         RuntimeError,
         match="LLM service is unavailable",
     ):
-        await llm_service.ask("Make me a study plan")
+        await llm_service.ask(
+            "Make me a study plan",
+            request_id="test-request-id",
+        )

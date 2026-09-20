@@ -6,7 +6,10 @@ async def test_chat_success(
     authorized_client,
     monkeypatch,
 ):
-    async def fake_ask(message: str) -> ChatResponse:
+    async def fake_ask(
+            message: str,
+            request_id: str,
+    ) -> ChatResponse:
         return ChatResponse(
             answer="Here is your plan",
             tasks=[
@@ -44,7 +47,10 @@ async def test_chat_llm_unavailable(
     authorized_client,
     monkeypatch,
 ):
-    async def fake_ask(message: str):
+    async def fake_ask(
+            message: str,
+            request_id: str,
+    ):
         raise RuntimeError(
             "LLM service is unavailable"
         )

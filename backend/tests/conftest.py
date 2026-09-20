@@ -70,7 +70,7 @@ async def auth_headers(client):
         json={
             "username": "testuser",
             "email": "test@example.com",
-            "password": "testpassword123",
+            "password": "Testpassword123!",
         },
     )
 
@@ -78,7 +78,7 @@ async def auth_headers(client):
         "/auth/login",
         json={
             "email": "test@example.com",
-            "password": "testpassword123",
+            "password": "Testpassword123!",
         },
     )
 

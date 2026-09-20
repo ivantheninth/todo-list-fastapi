@@ -1,6 +1,6 @@
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 
 from app.api.dependencies.auth import get_current_user
 from app.db.models.user import User
@@ -22,11 +22,13 @@ router = APIRouter(
 )
 async def chat(
     user_request: ChatRequest,
+    request: Request,
     current_user: User = Depends(get_current_user),
 ):
     try:
         return await llm_service.ask(
             user_request.message,
+            request_id=request.state.request_id,
         )
 
     except RuntimeError:

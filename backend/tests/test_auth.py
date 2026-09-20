@@ -4,7 +4,7 @@ async def test_get_current_user(client):
         json={
             "username": "testuser",
             "email": "test@example.com",
-            "password": "testpassword123",
+            "password": "Testpassword123!",
         },
     )
 
@@ -14,7 +14,7 @@ async def test_get_current_user(client):
         "/auth/login",
         json={
             "email": "test@example.com",
-            "password": "testpassword123",
+            "password": "Testpassword123!",
         },
     )
 
@@ -43,7 +43,7 @@ async def test_register_with_empty_username(client):
         json={
             "username": "   ",
             "email": "test@example.com",
-            "password": "testpassword123",
+            "password": "Testpassword123!",
         },
     )
 
@@ -56,7 +56,7 @@ async def test_register_with_invalid_email(client):
         json={
             "username": "testuser",
             "email": "not-an-email",
-            "password": "testpassword123",
+            "password": "Testpassword123!",
         },
     )
 
@@ -70,6 +70,44 @@ async def test_register_with_short_password(client):
             "username": "testuser",
             "email": "test@example.com",
             "password": "1234567",
+        },
+    )
+
+    assert response.status_code == 422
+
+async def test_register_password_requires_uppercase(client):
+    response = await client.post(
+        "/auth/register",
+        json={
+            "username": "testuser",
+            "email": "test@example.com",
+            "password": "testpassword123!",
+        },
+    )
+
+    assert response.status_code == 422
+
+
+async def test_register_password_requires_number(client):
+    response = await client.post(
+        "/auth/register",
+        json={
+            "username": "testuser",
+            "email": "test@example.com",
+            "password": "Testpassword!",
+        },
+    )
+
+    assert response.status_code == 422
+
+
+async def test_register_password_requires_special_character(client):
+    response = await client.post(
+        "/auth/register",
+        json={
+            "username": "testuser",
+            "email": "test@example.com",
+            "password": "Testpassword123",
         },
     )
 

@@ -6,6 +6,7 @@ from pydantic import (
     EmailStr,
     Field,
     StringConstraints,
+    field_validator,
 )
 
 
@@ -26,6 +27,20 @@ class UserCreate(BaseModel):
         min_length=8,
         max_length=128,
     )
+
+    @field_validator("password")
+    @classmethod
+    def validate_password(cls, password: str) -> str:
+        if not any(char.isupper() for char in password):
+            raise ValueError("Password must contain an uppercase letter")
+
+        if not any(char.isdigit() for char in password):
+            raise ValueError("Password must contain a number")
+
+        if not any(not char.isalnum() for char in password):
+            raise ValueError("Password must contain a special character")
+
+        return password
 
 
 class UserRead(BaseModel):

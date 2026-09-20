@@ -51,6 +51,8 @@ async def log_requests(request: Request, call_next):
         str(uuid.uuid4()),
     )
 
+    request.state.request_id = request_id
+
     started_at = time.perf_counter()
 
     try:

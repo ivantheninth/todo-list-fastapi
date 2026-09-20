@@ -521,6 +521,18 @@ function Index() {
             </div>
 
             {authMode === "register" && (
+              <div className="-mt-1 text-xs text-muted-foreground">
+                <p>Password must contain:</p>
+                <ul className="mt-1 list-disc space-y-0.5 pl-4">
+                  <li>At least 8 characters</li>
+                  <li>One uppercase letter</li>
+                  <li>One number</li>
+                  <li>One special character</li>
+                </ul>
+              </div>
+            )}
+
+            {authMode === "register" && (
               <div className="relative">
                 <input
                   type={showRepeatPassword ? "text" : "password"}

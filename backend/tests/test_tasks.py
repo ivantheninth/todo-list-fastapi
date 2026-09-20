@@ -335,7 +335,7 @@ async def test_user_cannot_get_another_users_task(
         json={
             "username": "seconduser",
             "email": "second@example.com",
-            "password": "testpassword123",
+            "password": "Testpassword123!",
         },
     )
 
@@ -344,7 +344,7 @@ async def test_user_cannot_get_another_users_task(
         "/auth/login",
         json={
             "email": "second@example.com",
-            "password": "testpassword123",
+            "password": "Testpassword123!",
         },
     )
 
@@ -379,7 +379,7 @@ async def test_user_cannot_delete_another_users_task(
         json={
             "username": "seconduser",
             "email": "second@example.com",
-            "password": "testpassword123",
+            "password": "Testpassword123!",
         },
     )
 
@@ -387,7 +387,7 @@ async def test_user_cannot_delete_another_users_task(
         "/auth/login",
         json={
             "email": "second@example.com",
-            "password": "testpassword123",
+            "password": "Testpassword123!",
         },
     )
 
@@ -421,7 +421,7 @@ async def test_user_cannot_update_another_users_task(
         json={
             "username": "seconduser",
             "email": "second@example.com",
-            "password": "testpassword123",
+            "password": "Testpassword123!",
         },
     )
 
@@ -429,7 +429,7 @@ async def test_user_cannot_update_another_users_task(
         "/auth/login",
         json={
             "email": "second@example.com",
-            "password": "testpassword123",
+            "password": "Testpassword123!",
         },
     )
 
@@ -468,7 +468,7 @@ async def test_user_cannot_patch_another_users_task(
         json={
             "username": "seconduser",
             "email": "second@example.com",
-            "password": "testpassword123",
+            "password": "Testpassword123!",
         },
     )
 
@@ -476,7 +476,7 @@ async def test_user_cannot_patch_another_users_task(
         "/auth/login",
         json={
             "email": "second@example.com",
-            "password": "testpassword123",
+            "password": "Testpassword123!",
         },
     )
 
@@ -511,7 +511,7 @@ async def test_user_sees_only_own_tasks(
         json={
             "username": "seconduser",
             "email": "second@example.com",
-            "password": "testpassword123",
+            "password": "Testpassword123!",
         },
     )
 
@@ -519,7 +519,7 @@ async def test_user_sees_only_own_tasks(
         "/auth/login",
         json={
             "email": "second@example.com",
-            "password": "testpassword123",
+            "password": "Testpassword123!",
         },
     )
 

@@ -84,18 +84,18 @@ The frontend uses relative API URLs.
 
 Main endpoints used by the client include:
 
-| Method | Endpoint | Purpose |
-|---|---|---|
-| `POST` | `/auth/register` | Register a user |
-| `POST` | `/auth/login` | Authenticate a user |
-| `GET` | `/auth/me` | Retrieve the current user |
-| `GET` | `/tasks` | Retrieve tasks |
-| `POST` | `/tasks` | Create a task |
-| `POST` | `/tasks/bulk` | Create suggested tasks |
-| `PUT` | `/tasks/{task_id}` | Replace a task |
-| `PATCH` | `/tasks/{task_id}` | Partially update a task |
-| `DELETE` | `/tasks/{task_id}` | Delete a task |
-| `POST` | `/chat` | Send a message to the assistant |
+| Method   | Endpoint           | Purpose                         |
+| -------- | ------------------ | ------------------------------- |
+| `POST`   | `/auth/register`   | Register a user                 |
+| `POST`   | `/auth/login`      | Authenticate a user             |
+| `GET`    | `/auth/me`         | Retrieve the current user       |
+| `GET`    | `/tasks`           | Retrieve tasks                  |
+| `POST`   | `/tasks`           | Create a task                   |
+| `POST`   | `/tasks/bulk`      | Create suggested tasks          |
+| `PUT`    | `/tasks/{task_id}` | Replace a task                  |
+| `PATCH`  | `/tasks/{task_id}` | Partially update a task         |
+| `DELETE` | `/tasks/{task_id}` | Delete a task                   |
+| `POST`   | `/chat`            | Send a message to the assistant |
 
 Protected requests include the JWT access token using the `Authorization` header:
 
