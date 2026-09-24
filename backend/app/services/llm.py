@@ -9,7 +9,11 @@ from app.schemas.chat import ChatResponse
 
 from app.services.llm_cost import calculate_llm_cost
 
+from opentelemetry import trace
+
 logger = logging.getLogger(__name__)
+
+tracer = trace.get_tracer(__name__)
 
 
 SYSTEM_PROMPT = """
@@ -59,39 +63,72 @@ class LLMService:
         )
 
     async def ask(
-        self,
-        message: str,
-        request_id: str,
+            self,
+            message: str,
+            request_id: str,
     ) -> ChatResponse:
         try:
-            response = await self.client.responses.create(
-                model=settings.OPENAI_MODEL,
-                instructions=SYSTEM_PROMPT,
-                input=message,
-                reasoning={
-                    "effort": "minimal",
-                },
-                max_output_tokens=(
-                    settings.OPENAI_MAX_OUTPUT_TOKENS
-                ),
-                store=False,
-            )
+            with tracer.start_as_current_span(
+                    "openai.responses.create"
+            ) as span:
+                response = await self.client.responses.create(
+                    model=settings.OPENAI_MODEL,
+                    instructions=SYSTEM_PROMPT,
+                    input=message,
+                    reasoning={
+                        "effort": "minimal",
+                    },
+                    max_output_tokens=(
+                        settings.OPENAI_MAX_OUTPUT_TOKENS
+                    ),
+                    store=False,
+                )
 
-            input_tokens = response.usage.input_tokens
-            output_tokens = response.usage.output_tokens
-            reasoning_tokens = (
-                response.usage.output_tokens_details.reasoning_tokens
-            )
-            total_tokens = response.usage.total_tokens
+                input_tokens = response.usage.input_tokens
+                output_tokens = response.usage.output_tokens
+                reasoning_tokens = (
+                    response.usage.output_tokens_details.reasoning_tokens
+                )
+                total_tokens = response.usage.total_tokens
 
-            cost_usd = calculate_llm_cost(
-                input_tokens=input_tokens,
-                output_tokens=output_tokens,
-            )
+                cost_usd = calculate_llm_cost(
+                    input_tokens=input_tokens,
+                    output_tokens=output_tokens,
+                )
+
+                span.set_attribute(
+                    "app.request_id",
+                    request_id,
+                )
+                span.set_attribute(
+                    "llm.model",
+                    settings.OPENAI_MODEL,
+                )
+                span.set_attribute(
+                    "llm.input_tokens",
+                    input_tokens,
+                )
+                span.set_attribute(
+                    "llm.output_tokens",
+                    output_tokens,
+                )
+                span.set_attribute(
+                    "llm.reasoning_tokens",
+                    reasoning_tokens,
+                )
+                span.set_attribute(
+                    "llm.total_tokens",
+                    total_tokens,
+                )
+                span.set_attribute(
+                    "llm.cost_usd",
+                    cost_usd,
+                )
 
             logger.info(
                 "LLM usage request_id=%s model=%s input_tokens=%s "
-                "output_tokens=%s reasoning_token=%s total_tokens=%s cost_usd=%.8f",
+                "output_tokens=%s reasoning_token=%s "
+                "total_tokens=%s cost_usd=%.8f",
                 request_id,
                 settings.OPENAI_MODEL,
                 input_tokens,
@@ -100,7 +137,6 @@ class LLMService:
                 total_tokens,
                 cost_usd,
             )
-
 
             data = json.loads(
                 response.output_text

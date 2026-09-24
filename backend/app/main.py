@@ -2,6 +2,9 @@ import logging
 import time
 import uuid
 
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+from opentelemetry import metrics
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -11,12 +14,31 @@ from app.api.routes.health import router as health_router
 from app.api.routes.tasks import router as tasks_router
 from app.core.config import settings
 from app.core.logging_config import configure_logging
+from app.core.telemetry import configure_tracing
 
 
 configure_logging()
+configure_tracing()
+
 logger = logging.getLogger(__name__)
 
+meter = metrics.get_meter(__name__)
+
+http_requests_total = meter.create_counter(
+    name="http_requests_total",
+    description="Total number of HTTP requests",
+    unit="1",
+)
+
+http_request_duration = meter.create_histogram(
+    name="http_request_duration_ms",
+    description="HTTP request duration in milliseconds",
+    unit="ms",
+)
+
 app = FastAPI()
+
+FastAPIInstrumentor.instrument_app(app)
 
 app.add_middleware(
     CORSMiddleware,
@@ -69,6 +91,24 @@ async def log_requests(request: Request, call_next):
     duration_ms = (
         time.perf_counter() - started_at
     ) * 1000
+
+    http_requests_total.add(
+        1,
+        {
+            "method": request.method,
+            "path": request.url.path,
+            "status_code": response.status_code,
+        },
+    )
+
+    http_request_duration.record(
+        duration_ms,
+        {
+            "method": request.method,
+            "path": request.url.path,
+            "status_code": response.status_code,
+        },
+    )
 
     logger.info(
         "Request completed request_id=%s method=%s "
