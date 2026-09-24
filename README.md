@@ -41,6 +41,18 @@ Users can create and organize private task lists, while the built-in AI assistan
 - GitHub Actions
 - Google Cloud Platform
 
+**Observability**
+
+- OpenTelemetry
+- OpenTelemetry Collector
+- Prometheus
+- Grafana
+- Tempo
+
+**Performance testing**
+
+- k6
+
 ## Architecture
 
 ```text
@@ -54,9 +66,21 @@ Browser
            |
            +-- PostgreSQL
            +-- OpenAI API
+           |
+           +-- OpenTelemetry
+                   |
+                   +-- OTel Collector
+                           |
+                           +-- Tempo
+                           |
+                           +-- Prometheus
+                                   |
+                                 Grafana
 ```
 
 The backend uses asynchronous database operations. Authentication protects personal data so that users can access only their own tasks.
+
+OpenTelemetry collects application traces and metrics. Traces are stored in Tempo, while metrics are exposed to Prometheus and visualized in Grafana.
 
 ## Security and reliability
 
@@ -71,6 +95,8 @@ The backend uses asynchronous database operations. Authentication protects perso
 - Request and error logging
 - Application health checks
 - Automated tests and security analysis
+- Distributed tracing and application metrics
+- Load and performance testing
 
 ## Project structure
 
@@ -78,9 +104,13 @@ The backend uses asynchronous database operations. Authentication protects perso
 .
 ├── backend/             # FastAPI application and tests
 ├── frontend/            # React web interface
+├── load-tests/          # k6 performance tests
 ├── .github/workflows/   # CI/CD configuration
 ├── docker-compose.yml
 ├── nginx.conf
+├── otel-collector.yml
+├── prometheus.yml
+├── tempo.yml
 └── README.md
 ```
 
@@ -126,6 +156,54 @@ npm ci
 npm run lint
 npm run build
 ```
+
+### Performance testing
+
+Performance tests use k6.
+
+Run the health endpoint test:
+
+```bash
+k6 run load-tests/health.js
+```
+
+Run the authenticated tasks test:
+
+```bash
+TEST_EMAIL='your_test_email' \
+TEST_PASSWORD='your_test_password' \
+k6 run load-tests/tasks.js
+```
+
+The authenticated test measures the `/tasks` endpoint separately and checks request latency and error rate under concurrent load.
+
+## Observability
+
+The application uses OpenTelemetry for tracing and metrics.
+
+```text
+FastAPI
+   |
+OpenTelemetry
+   |
+OTel Collector
+   |
+   +-- Traces --> Tempo
+   |
+   +-- Metrics --> Prometheus
+                       |
+                     Grafana
+```
+
+Grafana provides dashboards for application performance metrics including:
+
+- Requests per second
+- p50 request latency
+- p95 request latency
+- p99 request latency
+- 5xx error rate
+
+Tempo provides distributed traces for HTTP requests and external API calls.
 
 ## CI/CD
 
