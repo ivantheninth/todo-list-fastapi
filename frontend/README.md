@@ -1,109 +1,118 @@
-# ToDo List — Frontend
+# ToDoList — Frontend
 
-Web client for the ToDo List application.
+A React and TypeScript web application for task management, user authentication, and AI-assisted task planning.
 
-The frontend provides task management, authentication, and access to the AI assistant through a React and TypeScript interface.
-
-It communicates with the FastAPI backend through the application's API endpoints and uses JWT authentication for protected operations.
+The frontend communicates with a FastAPI backend through a REST API and uses cookie-based authentication.
 
 ## Features
 
 ### Authentication
 
-- User registration
-- User login
-- Username support
-- Password confirmation during registration
-- Show and hide password controls
-- JWT access token storage
-- Automatic current-user retrieval
+- User registration and login
+- Google OAuth 2.0 authentication
+- JWT authentication with HttpOnly cookies
 - Session restoration
+- User profile information
 - Logout
-- Display of the authenticated user's username and email
 
-### Task management
+### Task Management
 
-- Create tasks
-- View personal tasks
-- Edit tasks
-- Mark tasks as completed or active
-- Delete tasks
-- Add optional notes
-- Search tasks
-- Filter by:
-  - All
-  - Active
-  - Completed
-
-All task requests are authenticated and operate only on tasks belonging to the current user.
+- Create, edit, and delete tasks
+- Mark tasks as active or completed
+- Search and filter tasks
+- Add optional task descriptions
+- Bulk task creation
+- User-specific task lists
 
 ### AI Assistant
 
-- Send messages to the assistant
-- Receive conversational responses
-- Generate structured task suggestions
-- Review suggested tasks before saving
-- Create multiple suggested tasks in one request
-- Authenticated assistant requests
-- Authenticated bulk task creation
+- Conversational interface powered by the OpenAI API
+- AI-generated task suggestions
+- Review and confirmation before saving tasks
+- Bulk creation of suggested tasks
 
-## Technology stack
+## Tech Stack
 
-- React
-- TypeScript
-- TanStack Start
-- TanStack Router
-- Vite
-- Tailwind CSS
-- Radix UI
-- ESLint
-- Prettier
+| Category | Technologies |
+|----------|--------------|
+| Framework | React, TanStack Start |
+| Language | TypeScript |
+| Routing | TanStack Router |
+| Build Tool | Vite |
+| Styling | Tailwind CSS, Radix UI |
+| Testing | Vitest, React Testing Library, MSW, Playwright |
+| Code Quality | ESLint, Prettier |
+| Infrastructure | Docker, Nginx |
+| CI/CD | GitHub Actions |
 
-## Project structure
+## Architecture
+
+The frontend uses a component-based architecture with file-based routing.
+
+```text
+Browser
+   |
+   v
+React Application
+   |
+   +-- Authentication
+   |
+   +-- Task Management
+   |
+   +-- AI Assistant
+   |
+   v
+REST API
+   |
+   v
+FastAPI Backend
+```
+
+API requests use relative URLs, allowing the frontend and backend to operate behind the same Nginx reverse proxy.
+
+Authentication is handled through HttpOnly cookies. Protected requests include browser credentials without exposing authentication tokens to JavaScript.
+
+## API Integration
+
+The frontend communicates with the backend through the following endpoints:
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/auth/register` | Register a user |
+| POST | `/auth/login` | Authenticate a user |
+| POST | `/auth/logout` | End the current session |
+| GET | `/auth/me` | Retrieve the authenticated user |
+| GET | `/auth/google/login` | Start Google OAuth authentication |
+| GET | `/tasks` | Retrieve tasks |
+| POST | `/tasks` | Create a task |
+| POST | `/tasks/bulk` | Create multiple tasks |
+| PUT | `/tasks/{task_id}` | Replace a task |
+| PATCH | `/tasks/{task_id}` | Update task fields |
+| DELETE | `/tasks/{task_id}` | Delete a task |
+| POST | `/chat` | Send a message to the AI assistant |
+
+The backend handles authentication, authorization, validation, and data persistence.
+
+## Project Structure
 
 ```text
 frontend/
-├── public/                  # Static assets
+├── public/                 # Static assets
 ├── src/
-│   ├── components/         # Reusable UI components
-│   │   ├── ui/             # Shared UI primitives
-│   │   └── Chat.tsx        # AI assistant interface
-│   ├── routes/
-│   │   ├── __root.tsx      # Root application layout
-│   │   └── index.tsx       # Main application page
-│   └── ...
+│   ├── components/         # UI components
+│   │   ├── ui/             # Shared components
+│   │   └── Chat.tsx        # AI assistant
+│   ├── routes/             # Application routes
+│   └── test/               # Test configuration and utilities
+├── e2e/                    # End-to-end tests and runner
 ├── package.json
-├── package-lock.json
+├── playwright.config.ts
+├── vitest.config.ts
 ├── vite.config.ts
 └── README.md
 ```
 
-## Backend communication
-
-The frontend uses relative API URLs.
-
-Main endpoints used by the client include:
-
-| Method   | Endpoint           | Purpose                         |
-| -------- | ------------------ | ------------------------------- |
-| `POST`   | `/auth/register`   | Register a user                 |
-| `POST`   | `/auth/login`      | Authenticate a user             |
-| `GET`    | `/auth/me`         | Retrieve the current user       |
-| `GET`    | `/tasks`           | Retrieve tasks                  |
-| `POST`   | `/tasks`           | Create a task                   |
-| `POST`   | `/tasks/bulk`      | Create suggested tasks          |
-| `PUT`    | `/tasks/{task_id}` | Replace a task                  |
-| `PATCH`  | `/tasks/{task_id}` | Partially update a task         |
-| `DELETE` | `/tasks/{task_id}` | Delete a task                   |
-| `POST`   | `/chat`            | Send a message to the assistant |
-
-Protected requests include the JWT access token using the `Authorization` header:
-
-```text
-Authorization: Bearer <access_token>
-```
-
-## Local development
+## Getting Started
 
 ### Requirements
 
@@ -111,94 +120,119 @@ Authorization: Bearer <access_token>
 - npm
 - Running FastAPI backend
 
-### Install dependencies
+### Installation
 
 ```bash
 npm ci
 ```
 
-### Start the development server
+### Development
 
 ```bash
 npm run dev
 ```
 
-### Production build
+### Production Build
 
 ```bash
 npm run build
 ```
 
-### Preview the production build
+## Testing
+
+The frontend includes unit, integration, and end-to-end tests.
+
+### Unit and Integration Tests
+
+Vitest and React Testing Library are used for component and application testing.
+
+Mock Service Worker (MSW) handles API mocking.
+
+Run tests:
 
 ```bash
-npm run preview
+npm test
 ```
 
-## Code quality
+Generate a coverage report:
 
-Run ESLint:
+```bash
+npm run test:coverage
+```
+
+### End-to-End Tests
+
+Playwright is used to test authentication and task management workflows.
+
+Tests run against an isolated Docker Compose environment containing the frontend, FastAPI backend, PostgreSQL, and Nginx.
+
+```bash
+npm run test:e2e
+```
+
+### Code Quality
+
+TypeScript validation:
+
+```bash
+npx tsc --noEmit
+```
+
+ESLint:
 
 ```bash
 npm run lint
 ```
 
-Automatically fix supported formatting and linting issues:
+Production build validation:
 
 ```bash
-npm run lint -- --fix
+npm run build
 ```
 
-Format the project with Prettier:
+## Deployment
 
-```bash
-npm run format
-```
+The frontend is containerized with Docker and deployed alongside the FastAPI backend.
 
-## CI
-
-The frontend is verified automatically by GitHub Actions.
-
-The CI pipeline:
-
-- Installs dependencies with `npm ci`
-- Runs ESLint
-- Creates a production build with Vite
-
-A failed lint or build step prevents the verification workflow from completing successfully.
-
-## Production
-
-The frontend is built into a Docker image and deployed together with the backend, PostgreSQL, and Nginx.
-
-In production:
+Nginx provides HTTPS access and routes requests to the appropriate services.
 
 ```text
-Browser
-   |
-   v
-Nginx
-   |
-   +---- Frontend
-   |
-   +---- FastAPI API
+             Browser
+                |
+              HTTPS
+                |
+              Nginx
+                |
+       +--------+--------+
+       |                 |
+    Frontend          FastAPI
+                         |
+                     PostgreSQL
 ```
 
-Nginx acts as the public entry point and routes requests to the appropriate service.
+## CI/CD
 
-The application is served over HTTPS.
+GitHub Actions runs automated frontend checks, including:
 
-## Related services
+- Dependency installation
+- Unit and integration tests
+- Code coverage
+- TypeScript validation
+- ESLint
+- Production build
+- Playwright end-to-end tests
 
-The complete application also includes:
+Deployment is configured to run after successful CI checks on the `main` branch.
+
+## Related Services
+
+The frontend is part of the ToDoList application, which includes:
 
 - FastAPI backend
 - PostgreSQL database
-- Alembic database migrations
-- Nginx reverse proxy
-- Docker Compose
+- Google OAuth authentication
+- OpenAI API integration
+- Docker and Nginx infrastructure
 - GitHub Actions CI/CD
-- GitHub Container Registry
-- Google Cloud Platform deployment
 
-See the root `README.md` for documentation of the complete application.
+See the [main README](../README.md) for backend and infrastructure documentation.

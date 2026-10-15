@@ -11,8 +11,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.routes.auth import router as auth_router
 from app.api.routes.chat import router as chat_router
 from app.api.routes.health import router as health_router
+from app.api.routes.google_oauth import router as google_oauth_router
 from app.api.routes.tasks import router as tasks_router
 from app.core.config import settings
+from app.core.csrf import CSRFCookieAuthMiddleware
 from app.core.logging_config import configure_logging
 from app.core.telemetry import configure_tracing
 
@@ -57,10 +59,13 @@ app.add_middleware(
     ],
 )
 
+app.add_middleware(CSRFCookieAuthMiddleware)
+
 app.include_router(tasks_router)
 app.include_router(chat_router)
 app.include_router(health_router)
 app.include_router(auth_router)
+app.include_router(google_oauth_router)
 
 @app.get("/")
 def root():

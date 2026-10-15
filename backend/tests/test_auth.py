@@ -1,3 +1,6 @@
+from app.core.config import settings
+
+
 async def test_get_current_user(client):
     register_response = await client.post(
         "/auth/register",
@@ -12,6 +15,7 @@ async def test_get_current_user(client):
 
     login_response = await client.post(
         "/auth/login",
+        headers={"Origin": settings.FRONTEND_ORIGIN},
         json={
             "email": "test@example.com",
             "password": "Testpassword123!",

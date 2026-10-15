@@ -14,7 +14,12 @@ dist-ssr
 .vinxi
 .tanstack/**
 .nitro
+coverage/
 *.local
+e2e/.certs/
+e2e/.runner.lock
+playwright-report/
+test-results/
 
 # Wrangler / Cloudflare
 .wrangler/

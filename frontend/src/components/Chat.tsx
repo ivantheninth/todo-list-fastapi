@@ -18,21 +18,14 @@ type ChatApiResponse = {
 
 type ChatProps = {
   onTasksCreated?: () => void;
+  onAuthenticationExpired?: () => void;
 };
 
 function generateId() {
   return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
-function getAccessToken() {
-  if (typeof window === "undefined") {
-    return null;
-  }
-
-  return localStorage.getItem("access_token");
-}
-
-export default function Chat({ onTasksCreated }: ChatProps) {
+export default function Chat({ onTasksCreated, onAuthenticationExpired }: ChatProps) {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "welcome",
@@ -64,21 +57,6 @@ export default function Chat({ onTasksCreated }: ChatProps) {
       return;
     }
 
-    const token = getAccessToken();
-
-    if (!token) {
-      setMessages((previous) => [
-        ...previous,
-        {
-          id: generateId(),
-          role: "assistant",
-          text: "Please log in to use the AI assistant.",
-        },
-      ]);
-
-      return;
-    }
-
     const userMessage: Message = {
       id: generateId(),
       role: "user",
@@ -94,14 +72,19 @@ export default function Chat({ onTasksCreated }: ChatProps) {
     try {
       const response = await fetch("/chat", {
         method: "POST",
+        credentials: "same-origin",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           message: text,
         }),
       });
+
+      if (response.status === 401 || response.status === 403) {
+        onAuthenticationExpired?.();
+        throw new Error("Your session has expired.");
+      }
 
       if (!response.ok) {
         throw new Error(`Request failed: ${response.status}`);
@@ -138,29 +121,14 @@ export default function Chat({ onTasksCreated }: ChatProps) {
       return;
     }
 
-    const token = getAccessToken();
-
-    if (!token) {
-      setMessages((previous) => [
-        ...previous,
-        {
-          id: generateId(),
-          role: "assistant",
-          text: "Please log in to create tasks.",
-        },
-      ]);
-
-      return;
-    }
-
     setIsCreating(true);
 
     try {
       const response = await fetch("/tasks/bulk", {
         method: "POST",
+        credentials: "same-origin",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           tasks: suggestedTasks.map((task) => ({
@@ -170,6 +138,11 @@ export default function Chat({ onTasksCreated }: ChatProps) {
           })),
         }),
       });
+
+      if (response.status === 401 || response.status === 403) {
+        onAuthenticationExpired?.();
+        throw new Error("Your session has expired.");
+      }
 
       if (!response.ok) {
         throw new Error(`Task creation failed: ${response.status}`);

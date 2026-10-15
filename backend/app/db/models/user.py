@@ -28,9 +28,13 @@ class User(Base):
         nullable=False,
     )
 
-    hashed_password: Mapped[str] = mapped_column(
+    hashed_password: Mapped[str | None] = mapped_column(
         String,
-        nullable=False,
+        nullable=True,
+    )
+
+    oauth_identities: Mapped[list["OAuthIdentity"]] = relationship(
+        back_populates="user",
     )
 
     tasks: Mapped[list["Task"]] = relationship(
