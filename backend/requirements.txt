@@ -12,6 +12,7 @@ pytest-asyncio
 greenlet
 alembic
 PyJWT
+itsdangerous==2.2.0
 pwdlib[argon2]
 opentelemetry-api==1.44.0
 opentelemetry-sdk==1.44.0

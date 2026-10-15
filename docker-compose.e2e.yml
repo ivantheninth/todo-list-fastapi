@@ -1,0 +1,74 @@
+name: todolist-e2e
+
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: e2e_user
+      POSTGRES_PASSWORD: e2e_password
+      POSTGRES_DB: todolist_e2e
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U e2e_user -d todolist_e2e"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  migrate:
+    build:
+      context: ./backend
+      dockerfile: dockerfile
+    command: alembic upgrade head
+    environment: &backend-environment
+      DATABASE_URL: postgresql+asyncpg://e2e_user:e2e_password@postgres:5432/todolist_e2e
+      ALEMBIC_DATABASE_URL: postgresql+asyncpg://e2e_user:e2e_password@postgres:5432/todolist_e2e
+      OPENAI_API_KEY: e2e-not-used
+      OPENAI_MODEL: e2e-not-used
+      FRONTEND_ORIGIN: https://localhost:8443
+      CSRF_TRUSTED_ORIGINS: https://localhost:8443
+      JWT_SECRET_KEY: e2e-only-secret-not-for-production
+      JWT_ALGORITHM: HS256
+      JWT_ACCESS_TOKEN_EXPIRE_MINUTES: 30
+      AUTH_COOKIE_NAME: access_token
+      AUTH_COOKIE_SECURE: "true"
+      AUTH_COOKIE_HTTPONLY: "true"
+      AUTH_COOKIE_SAMESITE: lax
+      AUTH_COOKIE_PATH: /
+      OTEL_EXPORTER_OTLP_ENDPOINT: ""
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: dockerfile
+    environment: *backend-environment
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health')\""]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    environment:
+      HOST: 0.0.0.0
+      PORT: 3000
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "8443:443"
+    volumes:
+      - ./e2e/nginx.e2e.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./frontend/e2e/.certs:/etc/nginx/certs:ro
+    depends_on:
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_started

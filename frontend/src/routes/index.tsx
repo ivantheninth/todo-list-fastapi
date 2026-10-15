@@ -14,11 +14,6 @@ type Task = {
   completed: boolean;
 };
 
-type TokenResponse = {
-  access_token: string;
-  token_type: string;
-};
-
 type User = {
   id: number;
   username: string;
@@ -27,7 +22,7 @@ type User = {
 
 const API_URL = "/tasks";
 
-function Index() {
+export function Index() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [title, setTitle] = useState("");
   const [note, setNote] = useState("");
@@ -58,20 +53,11 @@ function Index() {
   const [authMode, setAuthMode] = useState<"login" | "register">("login");
 
   const [authLoading, setAuthLoading] = useState(false);
+  const [authInitialized, setAuthInitialized] = useState(false);
 
-  const [token, setToken] = useState<string | null>(() => {
-    if (typeof window === "undefined") {
-      return null;
-    }
-
-    return localStorage.getItem("access_token");
-  });
-
-  async function loadCurrentUser(accessToken: string) {
+  async function loadCurrentUser() {
     const res = await fetch("/auth/me", {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
+      credentials: "same-origin",
     });
 
     if (res.status === 401 || res.status === 403) {
@@ -84,12 +70,13 @@ function Index() {
 
     const user: User = await res.json();
 
-    setCurrentUser(user);
+    return user;
   }
 
   async function performLogin() {
     const res = await fetch("/auth/login", {
       method: "POST",
+      credentials: "same-origin",
       headers: {
         "Content-Type": "application/json",
       },
@@ -103,13 +90,8 @@ function Index() {
       throw new Error("Incorrect email or password");
     }
 
-    const data: TokenResponse = await res.json();
-
-    localStorage.setItem("access_token", data.access_token);
-
-    await loadCurrentUser(data.access_token);
-
-    setToken(data.access_token);
+    const user = await loadCurrentUser();
+    setCurrentUser(user);
     setPassword("");
     setRepeatPassword("");
   }
@@ -149,6 +131,7 @@ function Index() {
     try {
       const res = await fetch("/auth/register", {
         method: "POST",
+        credentials: "same-origin",
         headers: {
           "Content-Type": "application/json",
         },
@@ -189,10 +172,7 @@ function Index() {
     setShowRepeatPassword(false);
   }
 
-  function logout() {
-    localStorage.removeItem("access_token");
-
-    setToken(null);
+  function clearAuthenticationState() {
     setCurrentUser(null);
     setTasks([]);
 
@@ -209,23 +189,36 @@ function Index() {
     setAuthMode("login");
   }
 
-  async function loadTasks() {
-    if (!token) {
-      return;
-    }
+  async function logout() {
+    setError(null);
 
+    try {
+      const res = await fetch("/auth/logout", {
+        method: "POST",
+        credentials: "same-origin",
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to log out");
+      }
+
+      clearAuthenticationState();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to log out");
+    }
+  }
+
+  async function loadTasks() {
     setLoading(true);
     setError(null);
 
     try {
       const res = await fetch(API_URL, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        credentials: "same-origin",
       });
 
       if (res.status === 401 || res.status === 403) {
-        logout();
+        clearAuthenticationState();
 
         throw new Error("Your session has expired. Please log in again.");
       }
@@ -245,28 +238,27 @@ function Index() {
   }
 
   useEffect(() => {
-    if (!token) {
-      return;
-    }
-
     async function initializeUser() {
       try {
-        await loadCurrentUser(token);
+        const user = await loadCurrentUser();
+        setCurrentUser(user);
       } catch {
-        logout();
+        clearAuthenticationState();
         return;
+      } finally {
+        setAuthInitialized(true);
       }
 
       await loadTasks();
     }
 
-    initializeUser();
-  }, [token]);
+    void initializeUser();
+  }, []);
 
   async function createTask(e: FormEvent) {
     e.preventDefault();
 
-    if (!token) {
+    if (!currentUser) {
       return;
     }
 
@@ -279,9 +271,9 @@ function Index() {
 
     const res = await fetch(API_URL, {
       method: "POST",
+      credentials: "same-origin",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
         title: title.trim(),
@@ -291,7 +283,7 @@ function Index() {
     });
 
     if (res.status === 401 || res.status === 403) {
-      logout();
+      clearAuthenticationState();
       return;
     }
 
@@ -307,7 +299,7 @@ function Index() {
   }
 
   async function toggleCompleted(task: Task) {
-    if (!token) {
+    if (!currentUser) {
       return;
     }
 
@@ -315,9 +307,9 @@ function Index() {
 
     const res = await fetch(`${API_URL}/${task.id}`, {
       method: "PATCH",
+      credentials: "same-origin",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
         completed: !task.completed,
@@ -325,7 +317,7 @@ function Index() {
     });
 
     if (res.status === 401 || res.status === 403) {
-      logout();
+      clearAuthenticationState();
       return;
     }
 
@@ -344,7 +336,7 @@ function Index() {
   }
 
   async function saveEdit(task: Task) {
-    if (!token) {
+    if (!currentUser) {
       return;
     }
 
@@ -357,9 +349,9 @@ function Index() {
 
     const res = await fetch(`${API_URL}/${task.id}`, {
       method: "PATCH",
+      credentials: "same-origin",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
         title: editTitle.trim(),
@@ -368,7 +360,7 @@ function Index() {
     });
 
     if (res.status === 401 || res.status === 403) {
-      logout();
+      clearAuthenticationState();
       return;
     }
 
@@ -383,7 +375,7 @@ function Index() {
   }
 
   async function deleteTask(id: Task["id"]) {
-    if (!token) {
+    if (!currentUser) {
       return;
     }
 
@@ -391,13 +383,11 @@ function Index() {
 
     const res = await fetch(`${API_URL}/${id}`, {
       method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      credentials: "same-origin",
     });
 
     if (res.status === 401 || res.status === 403) {
-      logout();
+      clearAuthenticationState();
       return;
     }
 
@@ -431,7 +421,17 @@ function Index() {
     );
   });
 
-  if (!token) {
+  if (!authInitialized) {
+    return (
+      <div className="min-h-screen bg-background text-foreground">
+        <div className="mx-auto max-w-md px-6 py-16 text-muted-foreground">
+          Restoring your session…
+        </div>
+      </div>
+    );
+  }
+
+  if (!currentUser) {
     return (
       <div className="min-h-screen bg-background text-foreground">
         <div className="mx-auto max-w-md px-6 py-16">
@@ -562,6 +562,15 @@ function Index() {
             >
               {authLoading ? "Please wait..." : authMode === "login" ? "Login" : "Create account"}
             </button>
+
+            {authMode === "login" && (
+              <a
+                href="/auth/google/login"
+                className="rounded-lg border border-border px-5 py-3 font-medium transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Continue with Google
+              </a>
+            )}
 
             {error && (
               <div className="rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
@@ -803,7 +812,7 @@ function Index() {
 
         {showChat && (
           <section className="mt-10 overflow-hidden rounded-2xl border border-border bg-card shadow-[var(--shadow-warm)]">
-            <Chat onTasksCreated={loadTasks} />
+            <Chat onTasksCreated={loadTasks} onAuthenticationExpired={clearAuthenticationState} />
           </section>
         )}
       </div>
