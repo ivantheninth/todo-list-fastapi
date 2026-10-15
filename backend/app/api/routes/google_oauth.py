@@ -179,6 +179,10 @@ async def verify_google_id_token(
             },
         )
     except jwt.PyJWTError as exc:
+        logger.warning(
+            "Google ID token validation failed: %s",
+            type(exc).__name__,
+        )
         raise GoogleIDTokenValidationError from exc
 
     nonce = claims.get("nonce")
