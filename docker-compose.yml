@@ -65,6 +65,8 @@ services:
     restart: unless-stopped
 
   tempo:
+    profiles:
+      - monitoring
     image: grafana/tempo:latest
     command:
       - "-config.file=/etc/tempo.yml"
@@ -76,6 +78,8 @@ services:
     restart: unless-stopped
 
   otel-collector:
+    profiles:
+      - monitoring
     image: otel/opentelemetry-collector-contrib:latest
     command:
       - "--config=/etc/otel-collector.yml"
@@ -88,6 +92,8 @@ services:
     restart: unless-stopped
 
   grafana:
+    profiles:
+      - monitoring
     image: grafana/grafana:latest
     ports:
       - "127.0.0.1:3001:3000"
@@ -96,6 +102,8 @@ services:
     restart: unless-stopped
 
   prometheus:
+    profiles:
+      - monitoring
     image: prom/prometheus:latest
     command:
       - "--config.file=/etc/prometheus/prometheus.yml"
