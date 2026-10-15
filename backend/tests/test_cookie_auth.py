@@ -12,6 +12,7 @@ def cookie_headers(token: str) -> dict[str, str]:
 async def register_and_login(client, email: str, username: str):
     register_response = await client.post(
         "/auth/register",
+        headers={"Origin": settings.FRONTEND_ORIGIN},
         json={
             "username": username,
             "email": email,

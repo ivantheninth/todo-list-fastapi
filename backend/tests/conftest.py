@@ -57,7 +57,9 @@ async def client(db_session):
 
     async with AsyncClient(
         transport=transport,
-        base_url="http://test"
+        # Secure authentication cookies are only sent over HTTPS. This keeps
+        # the test client aligned with browser behavior in production.
+        base_url="https://test",
     ) as async_client:
         yield async_client
 
@@ -76,11 +78,14 @@ async def auth_headers(client):
 
     response = await client.post(
         "/auth/login",
+        headers={"Origin": settings.FRONTEND_ORIGIN},
         json={
             "email": "test@example.com",
             "password": "Testpassword123!",
         },
     )
+
+    assert response.status_code == 200
 
     token = response.json()["access_token"]
 
@@ -91,5 +96,9 @@ async def auth_headers(client):
 @pytest_asyncio.fixture
 async def authorized_client(client, auth_headers):
     client.headers.update(auth_headers)
+    # The login response installs a Secure HttpOnly cookie. Every unsafe
+    # request made through this fixture must therefore carry the browser-set,
+    # trusted Origin required by CSRF protection.
+    client.headers.update({"Origin": settings.FRONTEND_ORIGIN})
 
     return client
